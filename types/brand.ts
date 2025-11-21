@@ -1,4 +1,4 @@
-export interface Category {
+export interface Brand {
   id: string;
   name: string;
   isActive: boolean;

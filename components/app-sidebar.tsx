@@ -53,9 +53,9 @@ const data = {
       items: [
         { title: "Categories", url: "/master/categories" },
         { title: "Brands", url: "/master/brands" },
-        { title: "Units", url: "/master/units" },
+        // { title: "Units", url: "/master/units" },
         { title: "Suppliers", url: "/master/suppliers" },
-        { title: "Storage Locations", url: "/master/locations" },
+        { title: "Storage Locations", url: "/master/storage-locations" },
       ],
     },
 

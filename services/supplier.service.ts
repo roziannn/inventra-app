@@ -1,12 +1,15 @@
-import { Category } from "@/types/category";
+import { Supplier } from "@/types/supplier";
 
-const BASE_URL = "/api/master/categories";
+const BASE_URL = "/api/master/suppliers";
 
-export const categoryService = {
+export const supplierService = {
   getAllPaged: async (page = 1, limit = 10) => {
-    const res = await fetch(`/api/master/categories?page=${page}&limit=${limit}`);
-    if (!res.ok) throw new Error("Failed to fetch");
-    return res.json();
+    const res = await fetch(`${BASE_URL}?page=${page}&limit=${limit}`);
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(`Failed to fetch suppliers: ${data.error ?? JSON.stringify(data)}`);
+    }
+    return data;
   },
 
   create: async (name: string) => {
@@ -18,7 +21,7 @@ export const categoryService = {
     return res.json();
   },
 
-  update: async (id: string, data: Partial<Category>) => {
+  update: async (id: string, data: Partial<Supplier>) => {
     const res = await fetch(`${BASE_URL}?id=${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

@@ -18,10 +18,14 @@ datasource db {
 model Category {
   id        String   @id @default(uuid())
   name      String
+  isActive  Boolean  @default(true) 
   createdAt DateTime @default(now())
   createdBy String?
-  updatedAt DateTime?  // nullable karena mungkin belum diupdate
-  updatedBy String?    // nullable
+  updatedAt DateTime?  
+  updatedBy String?    
+
+  // relation
+  products Product[]
 }
 
 model User {
@@ -33,4 +37,99 @@ model User {
   createdBy String?
   updatedAt DateTime?
   updatedBy String?
+}
+
+model StorageLocation {
+  id              String   @id @default(uuid())
+  code            String   @unique            // ex: R1-A1, BOX-SSD-01
+  name            String                     // ex: Rak SSD
+  description     String?                    // optional
+  type            StorageType?               // enum (rack, shelf, box, etc)
+  zone            String?                    // ex: Zone A / Sparepart Room
+
+  maxCapacity     Int?                       // Kapasitas maksimal
+  currentCapacity Int?                       // Jumlah item sekarang
+  capacityUnit    String?                    // ex: "items", "boxes"
+
+  isActive        Boolean   @default(true)   // lokasi masih digunakan atau tidak
+
+  createdAt       DateTime  @default(now())
+  createdBy       String?
+  updatedAt       DateTime?
+  updatedBy       String?
+
+  // relation
+  products Product[]
+}
+
+enum StorageType {
+  rack
+  shelf
+  drawer
+  box
+  cabinet
+  bin
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime?
+  updatedBy String?
+  
+  products  Product[]
+}
+
+
+model Brand {
+  id        String   @id @default(uuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime?
+  updatedBy String?
+  
+  products  Product[]
+}
+
+model Product {
+  id                String   @id @default(uuid())
+  code              String   @unique
+  name              String
+  price             Float    @default(0)
+  stock             Int      @default(0)
+  unit              String
+  isActive          Boolean  @default(true)
+  
+  storageLocationId String
+  storageLocation   StorageLocation @relation(fields: [storageLocationId], references: [id])
+  
+  supplierId        String?  
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+
+  brandId        String?  
+  brand          Brand? @relation(fields: [brandId], references: [id])
+  
+  productCategoryId String
+  productCategory   Category @relation(fields: [productCategoryId], references: [id])
+  
+  condition         ProductCondition @default(New)
+  restockDate       DateTime         @default(now())
+  imageUrl          String?
+  barcode           String?
+  
+  createdAt         DateTime @default(now())
+  createdBy         String?
+  updatedAt         DateTime?
+  updatedBy         String?
+}
+
+enum ProductCondition {
+  New
+  Used
+  Refurbished
 }

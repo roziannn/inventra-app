@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const [data, total] = await Promise.all([
-      prisma.category.findMany({
+      prisma.brand.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.category.count(),
+      prisma.brand.count(),
     ]);
 
     return NextResponse.json({
@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Failed to fetch brands" }, { status: 500 });
   }
 }
 
@@ -39,22 +40,22 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     if (!body.name || body.name.trim() === "") {
-      return NextResponse.json({ error: "Category name is required" }, { status: 400 });
+      return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
     }
 
     const createdBy = body.createdBy ?? "system";
 
-    const newCategory = await prisma.category.create({
+    const newBrand = await prisma.brand.create({
       data: {
         name: body.name,
         createdBy,
       },
     });
 
-    return NextResponse.json(newCategory, { status: 201 });
+    return NextResponse.json(newBrand, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create brand" }, { status: 500 });
   }
 }
 
@@ -64,17 +65,17 @@ export async function DELETE(req: Request) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "Missing category ID" }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "Missing brand ID" }, { status: 400 });
 
-    const existing = await prisma.category.findUnique({ where: { id } });
-    if (!existing) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    const existing = await prisma.brand.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
 
-    const deleted = await prisma.category.delete({ where: { id } });
+    const deleted = await prisma.brand.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Category deleted", data: deleted });
+    return NextResponse.json({ message: "Brand deleted", data: deleted });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete brand" }, { status: 500 });
   }
 }
 
@@ -85,17 +86,17 @@ export async function PATCH(req: Request) {
     const id = url.searchParams.get("id");
     const body = await req.json();
 
-    if (!id) return NextResponse.json({ error: "Missing category ID" }, { status: 400 });
-    if (!body.name || body.name.trim() === "") return NextResponse.json({ error: "Category name is required" }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "Missing brand ID" }, { status: 400 });
+    if (!body.name || body.name.trim() === "") return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
 
-    const updated = await prisma.category.update({
+    const updated = await prisma.brand.update({
       where: { id },
       data: { name: body.name, isActive: body.isActive },
     });
 
-    return NextResponse.json({ message: "Category updated", data: updated });
+    return NextResponse.json({ message: "Brand updated", data: updated });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update brand" }, { status: 500 });
   }
 }

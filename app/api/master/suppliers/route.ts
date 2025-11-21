@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// ========= GET =========
+// ========= GET (Paginated) =========
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "10");
-
   const skip = (page - 1) * limit;
 
   try {
     const [data, total] = await Promise.all([
-      prisma.category.findMany({
+      prisma.supplier.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.category.count(),
+      prisma.supplier.count(),
     ]);
 
     return NextResponse.json({
@@ -29,7 +28,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Failed to fetch suppliers" }, { status: 500 });
   }
 }
 
@@ -39,22 +39,23 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     if (!body.name || body.name.trim() === "") {
-      return NextResponse.json({ error: "Category name is required" }, { status: 400 });
+      return NextResponse.json({ error: "Supplier name is required" }, { status: 400 });
     }
 
     const createdBy = body.createdBy ?? "system";
 
-    const newCategory = await prisma.category.create({
+    const newSupplier = await prisma.supplier.create({
       data: {
         name: body.name,
+        isActive: body.isActive ?? true,
         createdBy,
       },
     });
 
-    return NextResponse.json(newCategory, { status: 201 });
+    return NextResponse.json(newSupplier, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create supplier" }, { status: 500 });
   }
 }
 
@@ -64,17 +65,17 @@ export async function DELETE(req: Request) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "Missing category ID" }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "Missing supplier ID" }, { status: 400 });
 
-    const existing = await prisma.category.findUnique({ where: { id } });
-    if (!existing) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    const existing = await prisma.supplier.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Supplier not found" }, { status: 404 });
 
-    const deleted = await prisma.category.delete({ where: { id } });
+    const deleted = await prisma.supplier.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Category deleted", data: deleted });
+    return NextResponse.json({ message: "Supplier deleted", data: deleted });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete supplier" }, { status: 500 });
   }
 }
 
@@ -85,17 +86,17 @@ export async function PATCH(req: Request) {
     const id = url.searchParams.get("id");
     const body = await req.json();
 
-    if (!id) return NextResponse.json({ error: "Missing category ID" }, { status: 400 });
-    if (!body.name || body.name.trim() === "") return NextResponse.json({ error: "Category name is required" }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "Missing supplier ID" }, { status: 400 });
+    if (!body.name || body.name.trim() === "") return NextResponse.json({ error: "Supplier name is required" }, { status: 400 });
 
-    const updated = await prisma.category.update({
+    const updated = await prisma.supplier.update({
       where: { id },
       data: { name: body.name, isActive: body.isActive },
     });
 
-    return NextResponse.json({ message: "Category updated", data: updated });
+    return NextResponse.json({ message: "Supplier updated", data: updated });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to update category" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update supplier" }, { status: 500 });
   }
 }

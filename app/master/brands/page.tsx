@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
-import { categoryService } from "@/services/category.service";
-import { Category } from "@/types/category";
+import { brandService } from "@/services/brand.service";
+import { Brand } from "@/types/brand";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
-export default function CategoryPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryName, setCategoryName] = useState("");
+export default function BrandPage() {
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brandName, setBrandName] = useState("");
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
@@ -26,10 +26,10 @@ export default function CategoryPage() {
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
-  const loadCategories = async () => {
+  const loadBrands = async () => {
     try {
-      const res = await categoryService.getAllPaged(page, limit);
-      setCategories(res.data);
+      const res = await brandService.getAllPaged(page, limit);
+      setBrands(res.data);
       setTotalPages(res.pagination.totalPages);
     } catch (err) {
       console.error(err);
@@ -38,38 +38,38 @@ export default function CategoryPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      await loadCategories();
+      await loadBrands();
     };
     fetchData();
-  });
+  }, [page]);
 
   const handleAdd = async () => {
-    if (!categoryName.trim()) return;
+    if (!brandName.trim()) return;
     setLoading(true);
-    await categoryService.create(categoryName);
-    await loadCategories();
+    await brandService.create(brandName);
+    await loadBrands();
     resetForm();
   };
 
   const handleUpdate = async () => {
     if (!editId) return;
     setLoading(true);
-    await categoryService.update(editId, {
-      name: categoryName,
+    await brandService.update(editId, {
+      name: brandName,
       isActive: editIsActive,
     });
-    await loadCategories();
+    await loadBrands();
     resetForm();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure?")) return;
-    await categoryService.delete(id);
-    await loadCategories();
+    await brandService.delete(id);
+    await loadBrands();
   };
 
   const resetForm = () => {
-    setCategoryName("");
+    setBrandName("");
     setDialogOpen(false);
     setEditId(null);
     setLoading(false);
@@ -78,7 +78,7 @@ export default function CategoryPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Categories</h1>
+        <h1 className="text-xl font-semibold">Brands</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -95,7 +95,7 @@ export default function CategoryPage() {
               setDialogOpen(true);
             }}
           >
-            <Plus /> Add Category
+            <Plus /> Add Brand
           </Button>
         </div>
       </div>
@@ -112,27 +112,27 @@ export default function CategoryPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((cat) => (
-            <TableRow key={cat.id}>
-              <TableCell>{cat.name}</TableCell>
-              <TableCell>{cat.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
-              <TableCell>{cat.createdBy}</TableCell>
-              <TableCell>{formatDate(cat.createdAt)}</TableCell>
+          {brands.map((brand) => (
+            <TableRow key={brand.id}>
+              <TableCell>{brand.name}</TableCell>
+              <TableCell>{brand.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+              <TableCell>{brand.createdBy}</TableCell>
+              <TableCell>{formatDate(brand.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
                 <Button
                   size="icon-sm"
                   variant="outline"
                   onClick={() => {
                     setDialogMode("edit");
-                    setEditId(cat.id);
-                    setCategoryName(cat.name);
-                    setEditIsActive(cat.isActive);
+                    setEditId(brand.id);
+                    setBrandName(brand.name);
+                    setEditIsActive(brand.isActive);
                     setDialogOpen(true);
                   }}
                 >
                   <Edit2 />
                 </Button>
-                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(cat.id)}>
+                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(brand.id)}>
                   <Trash2 />
                 </Button>
               </TableCell>
@@ -162,11 +162,11 @@ export default function CategoryPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === "add" ? "Add Category" : "Edit Category"}</DialogTitle>
+            <DialogTitle>{dialogMode === "add" ? "Add Brand" : "Edit Brand"}</DialogTitle>
           </DialogHeader>
 
           <Label>Name</Label>
-          <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+          <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
           {dialogMode === "edit" && (
             <div className="flex items-center justify-start gap-2 py-2">
               <Label>Status</Label>

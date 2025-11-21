@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
-import { categoryService } from "@/services/category.service";
-import { Category } from "@/types/category";
+import { supplierService } from "@/services/supplier.service";
+import { Supplier } from "@/types/supplier";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
-export default function CategoryPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryName, setCategoryName] = useState("");
+export default function SupplierPage() {
+  const [supplier, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierName, setSupplierName] = useState("");
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
@@ -26,10 +26,10 @@ export default function CategoryPage() {
   const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
-  const loadCategories = async () => {
+  const loadSuppliers = async () => {
     try {
-      const res = await categoryService.getAllPaged(page, limit);
-      setCategories(res.data);
+      const res = await supplierService.getAllPaged(page, limit);
+      setSuppliers(res.data);
       setTotalPages(res.pagination.totalPages);
     } catch (err) {
       console.error(err);
@@ -38,38 +38,38 @@ export default function CategoryPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      await loadCategories();
+      await loadSuppliers();
     };
     fetchData();
   });
 
   const handleAdd = async () => {
-    if (!categoryName.trim()) return;
+    if (!supplierName.trim()) return;
     setLoading(true);
-    await categoryService.create(categoryName);
-    await loadCategories();
+    await supplierService.create(supplierName);
+    await loadSuppliers();
     resetForm();
   };
 
   const handleUpdate = async () => {
     if (!editId) return;
     setLoading(true);
-    await categoryService.update(editId, {
-      name: categoryName,
+    await supplierService.update(editId, {
+      name: supplierName,
       isActive: editIsActive,
     });
-    await loadCategories();
+    await loadSuppliers();
     resetForm();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure?")) return;
-    await categoryService.delete(id);
-    await loadCategories();
+    await supplierService.delete(id);
+    await loadSuppliers();
   };
 
   const resetForm = () => {
-    setCategoryName("");
+    setSupplierName("");
     setDialogOpen(false);
     setEditId(null);
     setLoading(false);
@@ -78,7 +78,7 @@ export default function CategoryPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Categories</h1>
+        <h1 className="text-xl font-semibold">Suppliers</h1>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -112,27 +112,27 @@ export default function CategoryPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((cat) => (
-            <TableRow key={cat.id}>
-              <TableCell>{cat.name}</TableCell>
-              <TableCell>{cat.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
-              <TableCell>{cat.createdBy}</TableCell>
-              <TableCell>{formatDate(cat.createdAt)}</TableCell>
+          {supplier.map((sup) => (
+            <TableRow key={sup.id}>
+              <TableCell>{sup.name}</TableCell>
+              <TableCell>{sup.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+              <TableCell>{sup.createdBy}</TableCell>
+              <TableCell>{formatDate(sup.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
                 <Button
                   size="icon-sm"
                   variant="outline"
                   onClick={() => {
                     setDialogMode("edit");
-                    setEditId(cat.id);
-                    setCategoryName(cat.name);
-                    setEditIsActive(cat.isActive);
+                    setEditId(sup.id);
+                    setSupplierName(sup.name);
+                    setEditIsActive(sup.isActive);
                     setDialogOpen(true);
                   }}
                 >
                   <Edit2 />
                 </Button>
-                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(cat.id)}>
+                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(sup.id)}>
                   <Trash2 />
                 </Button>
               </TableCell>
@@ -166,7 +166,7 @@ export default function CategoryPage() {
           </DialogHeader>
 
           <Label>Name</Label>
-          <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+          <Input value={supplierName} onChange={(e) => setSupplierName(e.target.value)} />
           {dialogMode === "edit" && (
             <div className="flex items-center justify-start gap-2 py-2">
               <Label>Status</Label>

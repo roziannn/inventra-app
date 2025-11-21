@@ -1,11 +1,11 @@
-import { Category } from "@/types/category";
+import { Brand } from "@/types/brand";
 
-const BASE_URL = "/api/master/categories";
+const BASE_URL = "/api/master/brands";
 
-export const categoryService = {
+export const brandService = {
   getAllPaged: async (page = 1, limit = 10) => {
-    const res = await fetch(`/api/master/categories?page=${page}&limit=${limit}`);
-    if (!res.ok) throw new Error("Failed to fetch");
+    const res = await fetch(`${BASE_URL}?page=${page}&limit=${limit}`);
+    if (!res.ok) throw new Error("Failed to fetch brands");
     return res.json();
   },
 
@@ -18,7 +18,7 @@ export const categoryService = {
     return res.json();
   },
 
-  update: async (id: string, data: Partial<Category>) => {
+  update: async (id: string, data: Partial<Brand>) => {
     const res = await fetch(`${BASE_URL}?id=${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
