@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import Providers from "./providers";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -41,7 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Breadcrumb>
             </header>
 
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+              <Providers>{children}</Providers>
+            </div>
           </SidebarInset>
         </SidebarProvider>
       </body>

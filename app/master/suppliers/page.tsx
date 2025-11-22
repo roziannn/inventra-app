@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,65 +15,64 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 export default function SupplierPage() {
-  const [supplier, setSuppliers] = useState<Supplier[]>([]);
-  const [supplierName, setSupplierName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [supplierName, setSupplierName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
-  const [editIsActive, setEditIsActive] = useState<boolean>(true);
+  const [editIsActive, setEditIsActive] = useState(true);
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const queryClient = useQueryClient();
 
-  const loadSuppliers = async () => {
-    try {
-      const res = await supplierService.getAllPaged(page, limit);
-      setSuppliers(res.data);
-      setTotalPages(res.pagination.totalPages);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await loadSuppliers();
-    };
-    fetchData();
+  // FETCH SUPPLIERS
+  const { data, isLoading } = useQuery({
+    queryKey: ["suppliers", page, limit],
+    queryFn: () => supplierService.getAllPaged(page, limit),
+    // keepPreviousData: true,
   });
 
-  const handleAdd = async () => {
-    if (!supplierName.trim()) return;
-    setLoading(true);
-    await supplierService.create(supplierName);
-    await loadSuppliers();
-    resetForm();
-  };
+  const suppliers = data?.data || [];
+  const totalPages = data?.pagination?.totalPages || 1;
 
-  const handleUpdate = async () => {
-    if (!editId) return;
-    setLoading(true);
-    await supplierService.update(editId, {
-      name: supplierName,
-      isActive: editIsActive,
-    });
-    await loadSuppliers();
-    resetForm();
-  };
+  // MUTATIONS
+  const createSupplier = useMutation({
+    mutationFn: () => supplierService.create(supplierName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      resetForm();
+    },
+  });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
-    await supplierService.delete(id);
-    await loadSuppliers();
+  const updateSupplier = useMutation({
+    mutationFn: () =>
+      supplierService.update(editId!, {
+        name: supplierName,
+        isActive: editIsActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      resetForm();
+    },
+  });
+
+  const deleteSupplier = useMutation({
+    mutationFn: (id: string) => supplierService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+
+  // Handlers
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure?")) deleteSupplier.mutate(id);
   };
 
   const resetForm = () => {
     setSupplierName("");
-    setDialogOpen(false);
     setEditId(null);
-    setLoading(false);
+    setDialogOpen(false);
+    setEditIsActive(true);
   };
 
   return (
@@ -95,51 +95,55 @@ export default function SupplierPage() {
               setDialogOpen(true);
             }}
           >
-            <Plus /> Add Category
+            <Plus /> Add Supplier
           </Button>
         </div>
       </div>
 
       {/* TABLE */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>IsActive</TableHead>
-            <TableHead>Created By</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {supplier.map((sup) => (
-            <TableRow key={sup.id}>
-              <TableCell>{sup.name}</TableCell>
-              <TableCell>{sup.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
-              <TableCell>{sup.createdBy}</TableCell>
-              <TableCell>{formatDate(sup.createdAt)}</TableCell>
-              <TableCell className="flex justify-center gap-2">
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  onClick={() => {
-                    setDialogMode("edit");
-                    setEditId(sup.id);
-                    setSupplierName(sup.name);
-                    setEditIsActive(sup.isActive);
-                    setDialogOpen(true);
-                  }}
-                >
-                  <Edit2 />
-                </Button>
-                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(sup.id)}>
-                  <Trash2 />
-                </Button>
-              </TableCell>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>IsActive</TableHead>
+              <TableHead>Created By</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {suppliers.map((sup: Supplier) => (
+              <TableRow key={sup.id}>
+                <TableCell>{sup.name}</TableCell>
+                <TableCell>{sup.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+                <TableCell>{sup.createdBy}</TableCell>
+                <TableCell>{formatDate(sup.createdAt)}</TableCell>
+                <TableCell className="flex justify-center gap-2">
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    onClick={() => {
+                      setDialogMode("edit");
+                      setEditId(sup.id);
+                      setSupplierName(sup.name);
+                      setEditIsActive(sup.isActive);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit2 />
+                  </Button>
+                  <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(sup.id)}>
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* PAGINATION */}
       <div className="flex justify-end mt-6">
@@ -148,7 +152,7 @@ export default function SupplierPage() {
             <ChevronLeft />
           </Button>
 
-          <span className="text-sm text-gray-600">
+          <span>
             Page {page} of {totalPages}
           </span>
 
@@ -162,19 +166,20 @@ export default function SupplierPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{dialogMode === "add" ? "Add Category" : "Edit Category"}</DialogTitle>
+            <DialogTitle>{dialogMode === "add" ? "Add Supplier" : "Edit Supplier"}</DialogTitle>
           </DialogHeader>
 
           <Label>Name</Label>
           <Input value={supplierName} onChange={(e) => setSupplierName(e.target.value)} />
+
           {dialogMode === "edit" && (
-            <div className="flex items-center justify-start gap-2 py-2">
+            <div className="flex items-center gap-2 py-2">
               <Label>Status</Label>
               <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
             </div>
           )}
 
-          <Button onClick={dialogMode === "add" ? handleAdd : handleUpdate}>{loading ? "Saving..." : "Save"}</Button>
+          <Button onClick={() => (dialogMode === "add" ? createSupplier.mutate() : updateSupplier.mutate())}>{createSupplier.isPending || updateSupplier.isPending ? "Saving..." : "Save"}</Button>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,65 +15,64 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 export default function BrandPage() {
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [brandName, setBrandName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [brandName, setBrandName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
-  const [editIsActive, setEditIsActive] = useState<boolean>(true);
+  const [editIsActive, setEditIsActive] = useState(true);
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const queryClient = useQueryClient();
 
-  const loadBrands = async () => {
-    try {
-      const res = await brandService.getAllPaged(page, limit);
-      setBrands(res.data);
-      setTotalPages(res.pagination.totalPages);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // FETCH DATA with React Query
+  const { data, isLoading } = useQuery({
+    queryKey: ["brands", page, limit],
+    queryFn: () => brandService.getAllPaged(page, limit),
+    // keepPreviousData: true,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      await loadBrands();
-    };
-    fetchData();
-  }, [page]);
+  const brands = data?.data || [];
+  const totalPages = data?.pagination?.totalPages || 1;
 
-  const handleAdd = async () => {
-    if (!brandName.trim()) return;
-    setLoading(true);
-    await brandService.create(brandName);
-    await loadBrands();
-    resetForm();
-  };
+  // MUTATIONS
+  const createBrand = useMutation({
+    mutationFn: () => brandService.create(brandName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      resetForm();
+    },
+  });
 
-  const handleUpdate = async () => {
-    if (!editId) return;
-    setLoading(true);
-    await brandService.update(editId, {
-      name: brandName,
-      isActive: editIsActive,
-    });
-    await loadBrands();
-    resetForm();
-  };
+  const updateBrand = useMutation({
+    mutationFn: () =>
+      brandService.update(editId!, {
+        name: brandName,
+        isActive: editIsActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      resetForm();
+    },
+  });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
-    await brandService.delete(id);
-    await loadBrands();
+  const deleteBrand = useMutation({
+    mutationFn: (id: string) => brandService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    },
+  });
+
+  // Handlers
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure?")) deleteBrand.mutate(id);
   };
 
   const resetForm = () => {
     setBrandName("");
-    setDialogOpen(false);
     setEditId(null);
-    setLoading(false);
+    setDialogOpen(false);
+    setEditIsActive(true);
   };
 
   return (
@@ -101,45 +101,49 @@ export default function BrandPage() {
       </div>
 
       {/* TABLE */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>IsActive</TableHead>
-            <TableHead>Created By</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {brands.map((brand) => (
-            <TableRow key={brand.id}>
-              <TableCell>{brand.name}</TableCell>
-              <TableCell>{brand.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
-              <TableCell>{brand.createdBy}</TableCell>
-              <TableCell>{formatDate(brand.createdAt)}</TableCell>
-              <TableCell className="flex justify-center gap-2">
-                <Button
-                  size="icon-sm"
-                  variant="outline"
-                  onClick={() => {
-                    setDialogMode("edit");
-                    setEditId(brand.id);
-                    setBrandName(brand.name);
-                    setEditIsActive(brand.isActive);
-                    setDialogOpen(true);
-                  }}
-                >
-                  <Edit2 />
-                </Button>
-                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(brand.id)}>
-                  <Trash2 />
-                </Button>
-              </TableCell>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>IsActive</TableHead>
+              <TableHead>Created By</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {brands.map((brand: Brand) => (
+              <TableRow key={brand.id}>
+                <TableCell>{brand.name}</TableCell>
+                <TableCell>{brand.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+                <TableCell>{brand.createdBy}</TableCell>
+                <TableCell>{formatDate(brand.createdAt)}</TableCell>
+                <TableCell className="flex justify-center gap-2">
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    onClick={() => {
+                      setDialogMode("edit");
+                      setEditId(brand.id);
+                      setBrandName(brand.name);
+                      setEditIsActive(brand.isActive);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Edit2 />
+                  </Button>
+                  <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(brand.id)}>
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* PAGINATION */}
       <div className="flex justify-end mt-6">
@@ -148,7 +152,7 @@ export default function BrandPage() {
             <ChevronLeft />
           </Button>
 
-          <span className="text-sm text-gray-600">
+          <span>
             Page {page} of {totalPages}
           </span>
 
@@ -167,14 +171,15 @@ export default function BrandPage() {
 
           <Label>Name</Label>
           <Input value={brandName} onChange={(e) => setBrandName(e.target.value)} />
+
           {dialogMode === "edit" && (
-            <div className="flex items-center justify-start gap-2 py-2">
+            <div className="flex items-center gap-2 py-2">
               <Label>Status</Label>
               <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
             </div>
           )}
 
-          <Button onClick={dialogMode === "add" ? handleAdd : handleUpdate}>{loading ? "Saving..." : "Save"}</Button>
+          <Button onClick={() => (dialogMode === "add" ? createBrand.mutate() : updateBrand.mutate())}>{createBrand.isPending || updateBrand.isPending ? "Saving..." : "Save"}</Button>
         </DialogContent>
       </Dialog>
     </div>

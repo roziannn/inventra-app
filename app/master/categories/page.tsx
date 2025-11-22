@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,81 +12,68 @@ import { Category } from "@/types/category";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function CategoryPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryName, setCategoryName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [categoryName, setCategoryName] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
 
-  const loadCategories = async () => {
-    try {
-      const res = await categoryService.getAllPaged(page, limit);
-      setCategories(res.data);
-      setTotalPages(res.pagination.totalPages);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      await loadCategories();
-    };
-    fetchData();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["categories", page],
+    queryFn: () => categoryService.getAllPaged(page, limit),
+    // keepPreviousData: true,
   });
 
-  const handleAdd = async () => {
-    if (!categoryName.trim()) return;
-    setLoading(true);
-    await categoryService.create(categoryName);
-    await loadCategories();
-    resetForm();
-  };
+  const createMutation = useMutation({
+    mutationFn: () => categoryService.create(categoryName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      resetForm();
+    },
+  });
 
-  const handleUpdate = async () => {
-    if (!editId) return;
-    setLoading(true);
-    await categoryService.update(editId, {
-      name: categoryName,
-      isActive: editIsActive,
-    });
-    await loadCategories();
-    resetForm();
-  };
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      categoryService.update(editId!, {
+        name: categoryName,
+        isActive: editIsActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      resetForm();
+    },
+  });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
-    await categoryService.delete(id);
-    await loadCategories();
-  };
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => categoryService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
 
   const resetForm = () => {
     setCategoryName("");
-    setDialogOpen(false);
     setEditId(null);
-    setLoading(false);
+    setDialogOpen(false);
   };
+
+  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <p>Error loading categories</p>;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold">Categories</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setDialogMode("add");
-              setDialogOpen(true);
-            }}
-          >
+          <Button variant="outline">
             <ImportIcon /> Import
           </Button>
           <Button
@@ -105,17 +92,17 @@ export default function CategoryPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>IsActive</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((cat) => (
+          {data?.data.map((cat: Category) => (
             <TableRow key={cat.id}>
               <TableCell>{cat.name}</TableCell>
-              <TableCell>{cat.isActive ? <Badge variant="default">Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+              <TableCell>{cat.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
               <TableCell>{cat.createdBy}</TableCell>
               <TableCell>{formatDate(cat.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
@@ -132,7 +119,8 @@ export default function CategoryPage() {
                 >
                   <Edit2 />
                 </Button>
-                <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(cat.id)}>
+
+                <Button size="icon-sm" variant="destructive" onClick={() => deleteMutation.mutate(cat.id)}>
                   <Trash2 />
                 </Button>
               </TableCell>
@@ -143,19 +131,15 @@ export default function CategoryPage() {
 
       {/* PAGINATION */}
       <div className="flex justify-end mt-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
-            <ChevronLeft />
-          </Button>
-
-          <span className="text-sm text-gray-600">
-            Page {page} of {totalPages}
-          </span>
-
-          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((prev) => prev + 1)}>
-            <ChevronRight />
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+          <ChevronLeft />
+        </Button>
+        <span className="text-sm px-4">
+          Page {page} of {data?.pagination.totalPages}
+        </span>
+        <Button variant="outline" size="sm" disabled={page === data?.pagination.totalPages} onClick={() => setPage(page + 1)}>
+          <ChevronRight />
+        </Button>
       </div>
 
       {/* DIALOG FORM */}
@@ -167,14 +151,15 @@ export default function CategoryPage() {
 
           <Label>Name</Label>
           <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+
           {dialogMode === "edit" && (
-            <div className="flex items-center justify-start gap-2 py-2">
+            <div className="flex items-center gap-2 py-2">
               <Label>Status</Label>
               <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
             </div>
           )}
 
-          <Button onClick={dialogMode === "add" ? handleAdd : handleUpdate}>{loading ? "Saving..." : "Save"}</Button>
+          <Button onClick={dialogMode === "add" ? () => createMutation.mutate() : () => updateMutation.mutate()}>Save</Button>
         </DialogContent>
       </Dialog>
     </div>
