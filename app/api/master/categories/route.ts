@@ -4,19 +4,34 @@ import prisma from "@/lib/prisma";
 // ========= GET =========
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
-
-  const skip = (page - 1) * limit;
+  const type = searchParams.get("type"); // 'lov' untuk list tanpa paging
 
   try {
+    if (type === "lov") {
+      // GET LOV
+      const categories = await prisma.category.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: "asc" },
+      });
+
+      return NextResponse.json(categories);
+    }
+
+    // GET paging default
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
     const [data, total] = await Promise.all([
-      prisma.category.findMany({
+      prisma.storageLocation.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.category.count(),
+      prisma.storageLocation.count(),
     ]);
 
     return NextResponse.json({
@@ -29,7 +44,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Failed to fetch storage locations" }, { status: 500 });
   }
 }
 

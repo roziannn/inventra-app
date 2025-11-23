@@ -13,7 +13,7 @@ export const productService = {
   },
 
   getById: async (id: string) => {
-    const res = await fetch(`${BASE_URL}/${id}`);
+    const res = await fetch(`${BASE_URL}?id=${id}`);
     const data = await res.json();
     if (!res.ok) {
       throw new Error(`Failed to fetch product: ${data.error ?? JSON.stringify(data)}`);
@@ -46,8 +46,6 @@ export const productService = {
   // Delete product by ID
   delete: async (id: string) => {
     const res = await fetch(`${BASE_URL}?id=${id}`, { method: "DELETE" });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error ?? "Failed to delete product");
-    return result;
+    return res.json();
   },
 };

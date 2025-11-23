@@ -34,4 +34,11 @@ export const supplierService = {
     const res = await fetch(`${BASE_URL}?id=${id}`, { method: "DELETE" });
     return res.json();
   },
+
+  // GET LOV
+  getLOV: async (): Promise<Supplier[]> => {
+    const res = await fetch(`${BASE_URL}?type=lov`);
+    if (!res.ok) throw new Error("Failed to fetch suppliers");
+    return res.json();
+  },
 };

@@ -1,19 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// GET /api/products?page=1&limit=10
+// GET /api/products?page=1&limit=10&id=...&code=...
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "10");
   const skip = (page - 1) * limit;
 
+  const id = searchParams.get("id");
+
   try {
+    // Jika id atau code dikirim, ambil single product
+    if (id) {
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          supplier: true,
+          storageLocation: true,
+          productCategory: true,
+        },
+      });
+
+      if (!product) {
+        return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(product);
+    }
+
+    // Kalau nggak ada id/code, return paged list
     const [data, total] = await Promise.all([
       prisma.product.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: {
+          supplier: true,
+          storageLocation: true,
+          productCategory: true,
+        },
       }),
       prisma.product.count(),
     ]);
@@ -33,18 +60,27 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const generateProductCode = () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < 8; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  return `PRD/${result}`;
+};
+
 // POST /api/products
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (!body.code || !body.name || !body.productCategoryId || !body.storageLocationId) {
+    if (!body.name || !body.productCategoryId || !body.storageLocationId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const newProduct = await prisma.product.create({
       data: {
-        code: body.code,
+        code: generateProductCode(),
         name: body.name,
         price: body.price ?? 0,
         stock: body.stock ?? 0,
@@ -108,13 +144,15 @@ export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+
     if (!id) return NextResponse.json({ error: "Missing product ID" }, { status: 400 });
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Product not found" }, { status: 404 });
 
-    await prisma.product.delete({ where: { id } });
-    return NextResponse.json({ message: "Product deleted successfully" });
+    const deleted = await prisma.product.delete({ where: { id } });
+
+    return NextResponse.json({ message: "Product deleted", data: deleted });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });

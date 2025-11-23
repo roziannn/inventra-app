@@ -126,6 +126,8 @@ model Product {
   createdBy         String?
   updatedAt         DateTime?
   updatedBy         String?
+
+  stockAdjustments StockAdjustment[]
 }
 
 enum ProductCondition {
@@ -133,3 +135,18 @@ enum ProductCondition {
   Used
   Refurbished
 }
+
+model StockAdjustment {
+  id         String   @id @default(uuid())
+  productId  String
+  oldQty     Int
+  newQty     Int
+  type String   // "Increase" atau "Decrease"
+  difference Int
+  reason     String
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+

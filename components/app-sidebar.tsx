@@ -66,8 +66,8 @@ const data = {
       icon: SquareTerminal,
       items: [
         { title: "All Products", url: "/products" },
-        { title: "Add Product", url: "/products/add" },
-        { title: "Stock Adjustment", url: "/products/adjustment" },
+        // { title: "Add Product", url: "/products/add" },
+        { title: "Stock Adjustment", url: "/stock-adjustment" },
       ],
     },
 

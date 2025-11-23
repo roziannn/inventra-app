@@ -35,4 +35,11 @@ export const storageLocationService = {
     });
     if (!res.ok) throw new Error("Failed to delete storage location");
   },
+
+  // GET LOV
+  getLOV: async (): Promise<StorageLocation[]> => {
+    const res = await fetch(`${BASE_URL}?type=lov`);
+    if (!res.ok) throw new Error("Failed to fetch storage locations");
+    return res.json();
+  },
 };

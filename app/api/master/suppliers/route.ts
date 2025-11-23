@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// ========= GET (Paginated) =========
+// ========= GET =========
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
-  const skip = (page - 1) * limit;
+  const type = searchParams.get("type"); // 'lov' untuk list tanpa paging
 
   try {
+    if (type === "lov") {
+      // GET LOV
+      const suppliers = await prisma.supplier.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: "asc" },
+      });
+
+      return NextResponse.json(suppliers);
+    }
+
+    // GET paging default
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
     const [data, total] = await Promise.all([
       prisma.supplier.findMany({
         skip,
@@ -29,7 +45,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to fetch suppliers" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch storage locations" }, { status: 500 });
   }
 }
 

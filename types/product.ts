@@ -13,4 +13,8 @@ export interface Product {
   restockDate: Date; // Tanggal restock terakhir
   imageUrl?: string; // Link gambar produk (opsional)
   barcode?: string; // Barcode atau SKU (opsional)
+
+  supplier?: { id: string; name: string };
+  productCategory?: { id: string; name: string };
+  storageLocation?: { id: string; name: string };
 }

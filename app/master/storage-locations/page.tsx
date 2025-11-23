@@ -89,8 +89,12 @@ export default function StorageLocationPage() {
   const zoneOptions = ["Ruang Sparepart", "Ruang Arsip", "Ruang Studio"];
 
   const generateCode = () => {
-    const random = Math.floor(1000 + Math.random() * 9000);
-    setForm((prev) => ({ ...prev, code: `LOC-${random}` }));
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    setForm((prev) => ({ ...prev, code: result }));
   };
 
   return (
