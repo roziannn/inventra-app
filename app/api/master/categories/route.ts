@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      prisma.storageLocation.findMany({
+      prisma.category.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.storageLocation.count(),
+      prisma.category.count(),
     ]);
 
     return NextResponse.json({
@@ -62,6 +62,7 @@ export async function POST(req: Request) {
 
     const newCategory = await prisma.category.create({
       data: {
+        id: crypto.randomUUID(),
         name: body.name,
         createdBy,
       },

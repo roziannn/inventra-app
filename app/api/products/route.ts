@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
         where: { id },
         include: {
           supplier: true,
-          storageLocation: true,
-          productCategory: true,
+          storagelocation: true,
+          category: true,
         },
       });
 
@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(product);
     }
 
-    // Kalau nggak ada id/code, return paged list
     const [data, total] = await Promise.all([
       prisma.product.findMany({
         skip,
@@ -38,8 +37,8 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           supplier: true,
-          storageLocation: true,
-          productCategory: true,
+          storagelocation: true,
+          category: true,
         },
       }),
       prisma.product.count(),
@@ -80,6 +79,7 @@ export async function POST(req: Request) {
 
     const newProduct = await prisma.product.create({
       data: {
+        id: crypto.randomUUID(),
         code: generateProductCode(),
         name: body.name,
         price: body.price ?? 0,

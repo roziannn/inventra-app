@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     if (type === "lov") {
       // GET LOV
-      const storageLocations = await prisma.storageLocation.findMany({
+      const storageLocations = await prisma.storagelocation.findMany({
         select: {
           id: true,
           name: true,
@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      prisma.storageLocation.findMany({
+      prisma.storagelocation.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.storageLocation.count(),
+      prisma.storagelocation.count(),
     ]);
 
     return NextResponse.json({
@@ -58,8 +58,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Code and Name are required" }, { status: 400 });
     }
 
-    const newLocation = await prisma.storageLocation.create({
+    const newLocation = await prisma.storagelocation.create({
       data: {
+        id: crypto.randomUUID(),
         code: body.code,
         name: body.name,
         description: body.description ?? null,
@@ -88,10 +89,10 @@ export async function DELETE(req: Request) {
 
     if (!id) return NextResponse.json({ error: "Missing storage location ID" }, { status: 400 });
 
-    const existing = await prisma.storageLocation.findUnique({ where: { id } });
+    const existing = await prisma.storagelocation.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Storage location not found" }, { status: 404 });
 
-    const deleted = await prisma.storageLocation.delete({ where: { id } });
+    const deleted = await prisma.storagelocation.delete({ where: { id } });
 
     return NextResponse.json({ message: "Storage location deleted", data: deleted });
   } catch (err) {
@@ -109,7 +110,7 @@ export async function PATCH(req: Request) {
 
     if (!id) return NextResponse.json({ error: "Missing storage location ID" }, { status: 400 });
 
-    const updated = await prisma.storageLocation.update({
+    const updated = await prisma.storagelocation.update({
       where: { id },
       data: {
         code: body.code,

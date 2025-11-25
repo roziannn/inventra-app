@@ -62,6 +62,7 @@ export async function POST(req: Request) {
 
     const newSupplier = await prisma.supplier.create({
       data: {
+        id: crypto.randomUUID(),
         name: body.name,
         isActive: body.isActive ?? true,
         createdBy,

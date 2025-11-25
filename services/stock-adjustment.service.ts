@@ -1,65 +1,25 @@
+// services/stock-adjustment.service.ts
 import { StockAdjustment } from "@/types/stock-adjustment";
 
 const BASE_URL = "/api/stock-adjustment";
 
 export const stockAdjustmentService = {
-  // Get by ID
-  getById: async (id: string) => {
-    const res = await fetch(`${BASE_URL}?id=${id}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch stock adjustment: ${data.error ?? JSON.stringify(data)}`);
-    }
-
-    return data;
-  },
-
-  // Create new adjustment
-  create: async (payload: Partial<StockAdjustment>) => {
+  create: async (data: { productId: string; type: string; quantity: number; reason?: string; note?: string; createdBy: string }) => {
     const res = await fetch(BASE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     });
 
     const result = await res.json();
-
-    if (!res.ok) {
-      throw new Error(result.error ?? "Failed to create stock adjustment");
-    }
-
-    return result;
+    if (!res.ok) throw new Error(result.error ?? "Failed to create stock adjustment");
+    return result as StockAdjustment;
   },
 
-  // Update adjustment
-  update: async (id: string, payload: Partial<StockAdjustment>) => {
-    const res = await fetch(`${BASE_URL}?id=${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      throw new Error(result.error ?? "Failed to update stock adjustment");
-    }
-
-    return result;
-  },
-
-  // Delete record
-  delete: async (id: string) => {
-    const res = await fetch(`${BASE_URL}?id=${id}`, {
-      method: "DELETE",
-    });
-
-    const result = await res.json();
-    if (!res.ok) {
-      throw new Error(result.error ?? "Failed to delete stock adjustment");
-    }
-
-    return result;
+  getByProductId: async (productId: string) => {
+    const res = await fetch(`${BASE_URL}?productId=${productId}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Failed to fetch stock adjustments");
+    return data as StockAdjustment[];
   },
 };

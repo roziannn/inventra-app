@@ -67,31 +67,33 @@ const data = {
       items: [
         { title: "All Products", url: "/products" },
         // { title: "Add Product", url: "/products/add" },
+        { title: "Inbound", url: "/products/inbound" },
+        { title: "Outbound", url: "/products/outbound" },
         { title: "Stock Adjustment", url: "/stock-adjustment" },
       ],
     },
 
     // Stock In
-    {
-      title: "Stock In",
-      url: "/stock-in",
-      icon: Frame,
-      items: [
-        { title: "Inbound List", url: "/stock-in" },
-        { title: "Add Inbound", url: "/stock-in/add" },
-      ],
-    },
+    // {
+    //   title: "Stock In",
+    //   url: "/stock-in",
+    //   icon: Frame,
+    //   items: [
+    //     { title: "Inbound List", url: "/stock-in" },
+    //     { title: "Add Inbound", url: "/stock-in/add" },
+    //   ],
+    // },
 
     // Stock Out
-    {
-      title: "Stock Out",
-      url: "/stock-out",
-      icon: GalleryVerticalEnd,
-      items: [
-        { title: "Outbound List", url: "/stock-out" },
-        { title: "Add Outbound", url: "/stock-out/add" },
-      ],
-    },
+    // {
+    //   title: "Stock Out",
+    //   url: "/stock-out",
+    //   icon: GalleryVerticalEnd,
+    //   items: [
+    //     { title: "Outbound List", url: "/stock-out" },
+    //     { title: "Add Outbound", url: "/stock-out/add" },
+    //   ],
+    // },
 
     // Reports
     {

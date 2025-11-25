@@ -15,6 +15,6 @@ export interface Product {
   barcode?: string; // Barcode atau SKU (opsional)
 
   supplier?: { id: string; name: string };
-  productCategory?: { id: string; name: string };
-  storageLocation?: { id: string; name: string };
+  category?: { id: string; name: string };
+  storagelocation?: { id: string; name: string };
 }

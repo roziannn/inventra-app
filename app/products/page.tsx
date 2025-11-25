@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2, MoreHorizontal, Edit3, PrinterIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,8 +15,10 @@ import { Product } from "@/types/product";
 import { formatDate } from "@/helper/formatDate";
 import { storageLocationService } from "@/services/storage-locations.service";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supplierService } from "@/services/supplier.service";
 import { categoryService } from "@/services/category.service";
+import { formatCurrency } from "@/helper/formatCurrency";
 
 export default function ProductPage() {
   const queryClient = useQueryClient();
@@ -151,34 +153,54 @@ export default function ProductPage() {
               <TableRow key={prod.id}>
                 {/* <TableCell>{prod.code}</TableCell> */}
                 <TableCell>{prod.name}</TableCell>
-                <TableCell>{prod.price}</TableCell>
+                <TableCell>{formatCurrency(prod.price)}</TableCell>
                 <TableCell>{prod.stock}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{prod.productCategory?.name}</Badge>
+                  <Badge variant="secondary">{prod.category?.name}</Badge>
                 </TableCell>
                 {/* <TableCell>{prod.unit}</TableCell> */}
-                <TableCell>{prod.storageLocation?.name}</TableCell>
+                <TableCell>{prod.storagelocation?.name}</TableCell>
                 <TableCell>{prod.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
 
                 <TableCell>{formatDate(prod.restockDate)}</TableCell>
-                <TableCell className="flex justify-center gap-2">
-                  <Button
-                    size="icon-sm"
-                    variant="outline"
-                    onClick={() => {
-                      setDialogMode("edit");
-                      setFormData({
-                        ...prod,
-                        restockDate: prod.restockDate ? new Date(prod.restockDate) : new Date(),
-                      });
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Edit2 />
-                  </Button>
-                  <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(prod.id)}>
-                    <Trash2 />
-                  </Button>
+                <TableCell className="text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="w-38"
+                        onClick={() => {
+                          setDialogMode("edit");
+                          setFormData({
+                            ...prod,
+                            restockDate: prod.restockDate ? new Date(prod.restockDate) : new Date(),
+                          });
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <PrinterIcon className="h-4 w-4 mr-2" /> Print Label
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setDialogMode("edit");
+                          setFormData({
+                            ...prod,
+                            restockDate: prod.restockDate ? new Date(prod.restockDate) : new Date(),
+                          });
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(prod.id)} className="text-red-600">
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { productService } from "@/services/product.service";
 import Link from "next/link";
 import { Product } from "@/types/product";
+import { formatCurrency } from "@/helper/formatCurrency";
 
 export default function StockAdjustmentListPage() {
   const [page, setPage] = useState(1);
@@ -34,8 +35,8 @@ export default function StockAdjustmentListPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Product</TableHead>
-              <TableHead>Stock</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead>Supplier</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
@@ -45,8 +46,8 @@ export default function StockAdjustmentListPage() {
             {products.map((prod: Product) => (
               <TableRow key={prod.id}>
                 <TableCell>{prod.name}</TableCell>
+                <TableCell>{formatCurrency(prod.price)}</TableCell>
                 <TableCell>{prod.stock}</TableCell>
-                <TableCell>Rp {prod.price.toLocaleString()}</TableCell>
                 <TableCell>{prod.supplier?.name ?? "-"}</TableCell>
                 <TableCell>{prod.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
                 <TableCell>

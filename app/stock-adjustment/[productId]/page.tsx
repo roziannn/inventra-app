@@ -7,16 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { stockAdjustmentService } from "@/services/stock-adjustment.service";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { productService } from "@/services/product.service";
 import { Product } from "@/types/product";
 import { formatDate } from "@/helper/formatDate";
+import { AlertCircle, CalendarDays, CheckCircle, TrendingDown, TrendingUp, Warehouse } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function StockMovementPage() {
+  const [selectedMonth, setSelectedMonth] = useState("");
+
   const router = useRouter();
   const params = useParams();
   const productId = params.productId as string;
@@ -34,153 +36,111 @@ export default function StockMovementPage() {
     queryFn: () => productService.getById(productId),
     enabled: !!productId,
   });
+  const { data: stockMovements, isLoading: isStockLoading } = useQuery({
+    queryKey: ["stock-movement", productId],
+    queryFn: () => stockAdjustmentService.getByProductId(productId),
+    enabled: !!productId,
+  });
 
   const adjustMutation = useMutation({
     mutationFn: () =>
       stockAdjustmentService.create({
         productId,
-        oldQty: product?.stock ?? 0,
-        newQty: adjustData.type === "Increase" ? (product?.stock ?? 0) + adjustData.quantity : (product?.stock ?? 0) - adjustData.quantity,
-        difference: adjustData.type === "Increase" ? adjustData.quantity : -adjustData.quantity,
+        type: adjustData.type,
         reason: adjustData.reason,
+        quantity: adjustData.quantity,
+        note: adjustData.note,
         createdBy: "system",
-        createdAt: new Date().toISOString(),
       }),
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["product", productId] });
-      router.push("/stock-adjustment");
+      queryClient.invalidateQueries({ queryKey: ["stock-movement", productId] });
     },
   });
 
-  const dummyAdjustments = [
-    {
-      id: 1,
-      type: "Increase",
-      quantity: 10,
-      oldQty: 50,
-      newQty: 60,
-      reason: "Stock Opname",
-      note: "Initial count correction",
-      createdBy: "admin",
-      createdAt: "2025-11-22 10:30",
-    },
-    {
-      id: 2,
-      type: "Decrease",
-      quantity: 5,
-      oldQty: 60,
-      newQty: 55,
-      reason: "Damage",
-      note: "Broken items",
-      createdBy: "staff1",
-      createdAt: "2025-11-22 14:20",
-    },
-    {
-      id: 3,
-      type: "Decrease",
-      quantity: 5,
-      oldQty: 60,
-      newQty: 55,
-      reason: "Damage",
-      note: "Broken items",
-      createdBy: "staff1",
-      createdAt: "2025-11-22 14:20",
-    },
-    {
-      id: 4,
-      type: "Decrease",
-      quantity: 5,
-      oldQty: 60,
-      newQty: 55,
-      reason: "Damage",
-      note: "Broken items",
-      createdBy: "staff1",
-      createdAt: "2025-11-22 14:20",
-    },
-    {
-      id: 5,
-      type: "Decrease",
-      quantity: 5,
-      oldQty: 60,
-      newQty: 55,
-      reason: "Damage",
-      note: "Broken items",
-      createdBy: "staff1",
-      createdAt: "2025-11-22 14:20",
-    },
+  const months = [
+    { value: "01", label: "January" },
+    { value: "02", label: "February" },
+    { value: "03", label: "March" },
+    // dst
   ];
-
   if (isLoading) return <p>Loading...</p>;
 
   return (
-    <div className="p-6">
+    <div className="px-6">
       {product && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Product Info */}
-            <Card className="shadow-sm md:col-span-2">
-              <CardContent className="bg-muted/30 rounded-md text-sm grid grid-cols-2 gap-4 py-1">
-                <div className="flex flex-col">
-                  <strong>Product Name</strong>
-                  <span>{product.name}</span>
+            <Card className="shadow-sm md:col-span-2 h-full gap-2">
+              <CardHeader>
+                <CardTitle className="text-md font-semibold">Product Information</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-3 gap-y-3 text-sm">
+                <div>
+                  <p className="font-medium text-muted-foreground">Product Name</p>
+                  <p>{product.name}</p>
                 </div>
 
-                <div className="flex flex-col">
-                  <strong>Category</strong>
-                  <span>{product.productCategory?.name}</span>
+                <div>
+                  <p className="font-medium text-muted-foreground">Category</p>
+                  <p>{product.category?.name}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Storage Location</p>
+                  <p>{product.storagelocation?.name}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Unit</p>
+                  <p>{product.unit}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Supplier</p>
+                  <p>{product.supplier?.name}</p>
                 </div>
 
-                <div className="flex flex-col">
-                  <strong>Supplier</strong>
-                  <span>{product.supplier?.name}</span>
-                </div>
-
-                <div className="flex flex-col">
-                  <strong>Condition</strong>
-                  <span>{product.condition}</span>
+                <div>
+                  <p className="font-medium text-muted-foreground">Condition</p>
+                  <p>{product.condition}</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm border flex items-center justify-center">
-              <CardContent className="text-center p-6">
-                <p className="text-sm font-bold pb-1">Current Stock</p>
-                <p className="text-4xl font-extrabold">{product.stock}</p>
+            {/* Current Stock */}
+            <Card className="shadow-sm border h-full flex flex-col gap-2 justify-between">
+              <CardHeader className="text-center">
+                <CardTitle className="text-md font-semibold">Product Stock</CardTitle>
+              </CardHeader>
+
+              <CardContent className="flex flex-col items-center justify-center text-center text-sm">
+                <div>
+                  <p className="font-medium text-muted-foreground">Current</p>
+                  <p className="text-4xl font-extrabold">{product.stock}</p>
+                </div>
+                {product.stock && (
+                  <Badge variant={product.stock < product.stock ? "destructive" : "default"} className="mt-3 flex items-center justify-center gap-1 text-xs px-3 py-1">
+                    {product.stock < product.stock ? (
+                      <>
+                        <AlertCircle className="w-3 h-3" /> Stock menipis, pertimbangkan pengisian ulang
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3 h-3" /> Stock dalam batas aman
+                      </>
+                    )}
+                  </Badge>
+                )}
               </CardContent>
             </Card>
           </div>
-
-          {/* Stock Chart */}
-          {/* <Card className="shadow-sm mt-2">
-            <CardHeader>
-              <CardTitle className="text-md">Stock Movement Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart
-                  data={dummyAdjustments.map((item) => ({
-                    date: item.createdAt.split(" ")[0],
-                    stock: item.newQty,
-                  }))}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="stock" stroke="#8884d8" strokeWidth={2} dot />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card> */}
 
           {/* Adjustment Form */}
           <Card className="mt-4 border-dashed border-2 shadow-none">
             <CardContent className="px-6">
               <h3 className="text-md font-semibold mb-4"> Adjustment Form</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label>Type</Label>
                   <Select value={adjustData.type} onValueChange={(val) => setAdjustData({ ...adjustData, type: val })}>
@@ -212,17 +172,7 @@ export default function StockMovementPage() {
 
                 <div>
                   <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    value={adjustData.quantity}
-                    onChange={(e) =>
-                      setAdjustData({
-                        ...adjustData,
-                        quantity: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    placeholder="Enter quantity"
-                  />
+                  <Input type="number" value={adjustData.quantity} onChange={(e) => setAdjustData({ ...adjustData, quantity: parseInt(e.target.value) || 0 })} />
                 </div>
 
                 <div>
@@ -231,11 +181,11 @@ export default function StockMovementPage() {
                 </div>
               </div>
 
-              {/* New Stock Preview & Submit */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mt-6">
-                <div className="bg-indigo-100/50 p-3 rounded text-sm md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mt-6">
+                <div className="bg-indigo-100/50 p-3 rounded text-sm md:col-span-3">
                   New Stock: <strong>{adjustData.type === "Increase" ? product.stock + adjustData.quantity : product.stock - adjustData.quantity}</strong>
                 </div>
+
                 <Button className="w-full" onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending}>
                   {adjustMutation.isPending ? "Processing..." : "Confirm Adjustment"}
                 </Button>
@@ -244,8 +194,34 @@ export default function StockMovementPage() {
           </Card>
 
           {/* Stock Movement Log */}
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-3">Stock Movement Log</h2>
+          <div className="mt-5">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-md font-semibold">Stock Adjusment Log</h2>
+              {/* Filter by Month */}
+              <div className="flex items-center gap-2">
+                <Label htmlFor="monthFilter" className="text-sm">
+                  <CalendarDays size={14} /> Filter by Month:
+                </Label>
+                <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Select month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* <div className="flex items-center gap-2">
+                <Button variant="outline">
+                  <TrendingUp size={14} /> Trend Stock
+                </Button>
+              </div> */}
+            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
@@ -260,20 +236,34 @@ export default function StockMovementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dummyAdjustments.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{formatDate(item.createdAt)}</TableCell>
-                    <TableCell>{item.type}</TableCell>
-                    <TableCell className="text-center">{item.quantity}</TableCell>
-                    <TableCell className="text-center">{item.oldQty}</TableCell>
-                    <TableCell className="text-center">
-                      <strong>{item.newQty}</strong>
+                {isStockLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      Loading...
                     </TableCell>
-                    <TableCell>{item.reason}</TableCell>
-                    <TableCell>{item.note}</TableCell>
-                    <TableCell>{item.createdBy}</TableCell>
                   </TableRow>
-                ))}
+                ) : stockMovements && stockMovements.length > 0 ? (
+                  stockMovements.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{formatDate(item.createdAt)}</TableCell>
+                      <TableCell>{item.type}</TableCell>
+                      <TableCell className="text-center">{item.difference}</TableCell>
+                      <TableCell className="text-center">{item.oldQty}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="font-bold text-indigo-500">{item.newQty}</span>
+                      </TableCell>
+                      <TableCell>{item.reason}</TableCell>
+                      <TableCell>{item.note}</TableCell>
+                      <TableCell>{item.createdBy}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      No stock adjustments found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>

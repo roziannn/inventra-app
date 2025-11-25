@@ -6,6 +6,7 @@ export interface StockAdjustment {
   type: string;
   difference: number;
   reason: string;
+  note: string;
   createdBy: string;
   createdAt: string;
 }
