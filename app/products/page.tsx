@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2, Plus, Trash2, MoreHorizontal, Edit3, PrinterIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, MoreHorizontal, Edit3, PrinterIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,8 +16,6 @@ import { productService } from "@/services/product.service";
 import { Product } from "@/types/product";
 import { formatDate } from "@/helper/formatDate";
 import { storageLocationService } from "@/services/storage-locations.service";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supplierService } from "@/services/supplier.service";
 import { categoryService } from "@/services/category.service";
 import { formatCurrency } from "@/helper/formatCurrency";
@@ -43,6 +43,14 @@ export default function ProductPage() {
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  const [printLabelOpen, setPrintLabelOpen] = useState(false);
+  const [labelProduct, setLabelProduct] = useState<Partial<Product>>({});
+  const [labelWidth, setLabelWidth] = useState(60); // mm
+  const [labelHeight, setLabelHeight] = useState(40); // mm
+
+  // add state untuk jumlah per baris
+  const [labelsPerRow, setLabelsPerRow] = useState(2); // default 2 per baris
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["products", page],
@@ -115,6 +123,63 @@ export default function ProductPage() {
     setDialogOpen(false);
   };
 
+  const handlePrintLabel = () => {
+    const printWindow = window.open("", "PRINT", "height=600,width=800");
+    if (printWindow) {
+      const labelHtml = Array.from({ length: labelsPerRow })
+        .map(
+          () => `
+        <div class="label">
+          <div class="product-name">${labelProduct.name}</div>
+          <div class="price-stock">Price: Rp ${Number(labelProduct.price || 0).toLocaleString("id-ID")}</div>
+          <div class="price-stock">Stock: ${labelProduct.stock || 0}</div>
+          <div class="barcode">
+            <img src="https://api-bwipjs.metafloor.com/?bcid=code128&text=${labelProduct.barcode || "000000"}&scale=2" alt="barcode" />
+          </div>
+          <div class="qr-code">
+            <img src="https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(labelProduct.barcode || "000000")}" alt="QR Code" />
+          </div>
+        </div>
+      `
+        )
+        .join("");
+
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Label</title>
+          <style>
+            body { margin:0; padding:10px; font-family:sans-serif; display:flex; flex-wrap:wrap; gap:5mm; }
+            .label {
+              border:1px solid #000;
+              width:${labelWidth}mm;
+              height:${labelHeight}mm;
+              display:flex;
+              flex-direction:column;
+              justify-content:space-between;
+              align-items:center;
+              padding:5mm;
+              box-sizing:border-box;
+              text-align:center;
+            }
+            .product-name { font-weight:bold; font-size:14pt; }
+            .price-stock { font-size:10pt; margin:2px 0; }
+            .barcode, .qr-code { margin-top:4px; }
+          </style>
+        </head>
+        <body>
+          ${labelHtml}
+        </body>
+      </html>
+    `);
+
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -174,12 +239,8 @@ export default function ProductPage() {
                       <DropdownMenuItem
                         className="w-38"
                         onClick={() => {
-                          setDialogMode("edit");
-                          setFormData({
-                            ...prod,
-                            restockDate: prod.restockDate ? new Date(prod.restockDate) : new Date(),
-                          });
-                          setDialogOpen(true);
+                          setLabelProduct(prod);
+                          setPrintLabelOpen(true);
                         }}
                       >
                         <PrinterIcon className="h-4 w-4 mr-2" /> Print Label
@@ -341,6 +402,83 @@ export default function ProductPage() {
           {/* Save Button */}
           <Button className="mt-4" onClick={() => (dialogMode === "add" ? createMutation.mutate() : updateMutation.mutate())} disabled={createMutation.isPending || updateMutation.isPending}>
             {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Label Dialog */}
+      <Dialog open={printLabelOpen} onOpenChange={setPrintLabelOpen}>
+        <DialogContent className="w-full">
+          <DialogHeader>
+            <DialogTitle>Print Label</DialogTitle>
+            <span className="font-bold"> {labelProduct.name}</span>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div className="col-span-2">
+              <Label>Label Size</Label>
+              <Select
+                onValueChange={(val) => {
+                  const sizes: Record<string, { w: number; h: number }> = {
+                    S: { w: 40, h: 25 },
+                    M: { w: 60, h: 40 },
+                    L: { w: 80, h: 50 },
+                    XL: { w: 100, h: 60 },
+                    "2XL": { w: 120, h: 80 },
+                  };
+                  setLabelWidth(sizes[val].w);
+                  setLabelHeight(sizes[val].h);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="-- Select Size --" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="S">Small (40×25 mm)</SelectItem>
+                  <SelectItem value="M">Medium (60×40 mm)</SelectItem>
+                  <SelectItem value="L">Large (80×50 mm)</SelectItem>
+                  <SelectItem value="XL">Extra Large (100×60 mm)</SelectItem>
+                  <SelectItem value="2XL">2XL (120×80 mm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Width (mm)</Label>
+              <Input type="number" value={labelWidth} onChange={(e) => setLabelWidth(parseInt(e.target.value))} />
+              <p className="text-xs text-gray-500 mt-1">*Optional adjustment</p>
+            </div>
+
+            <div>
+              <Label>Height (mm)</Label>
+              <Input type="number" value={labelHeight} onChange={(e) => setLabelHeight(parseInt(e.target.value))} />
+            </div>
+
+            <div className="col-span-2">
+              <Label>Labels Per Row</Label>
+              <Input type="number" value={labelsPerRow} onChange={(e) => setLabelsPerRow(parseInt(e.target.value))} />
+            </div>
+          </div>
+          {/* Preview */}
+          <div className="mt-4 flex justify-start">
+            <div
+              className="border-2 border-zinc-500 flex flex-col gap-2 items-start p-2"
+              style={{
+                width: `${labelWidth}mm`,
+                height: `${labelHeight}mm`,
+                boxSizing: "border-box",
+                textAlign: "center",
+              }}
+            >
+              <div className="font-semibold text-lg">{labelProduct.name}</div>
+              <div className="text-sm">{labelProduct.category?.name || "-"}</div>
+              <div className="text-sm">{labelProduct.supplier?.name || "-"}</div>
+              <div className="font-semibold text-sm">Rp {Number(labelProduct.price || 0).toLocaleString("id-ID")}</div>
+            </div>
+          </div>
+
+          <Button className="mt-4" onClick={handlePrintLabel}>
+            Print
           </Button>
         </DialogContent>
       </Dialog>

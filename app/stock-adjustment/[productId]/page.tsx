@@ -13,13 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { productService } from "@/services/product.service";
 import { Product } from "@/types/product";
 import { formatDate } from "@/helper/formatDate";
-import { AlertCircle, CalendarDays, CheckCircle, TrendingDown, TrendingUp, Warehouse } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function StockMovementPage() {
   const [selectedMonth, setSelectedMonth] = useState("");
 
-  const router = useRouter();
   const params = useParams();
   const productId = params.productId as string;
   const queryClient = useQueryClient();
@@ -197,7 +196,6 @@ export default function StockMovementPage() {
           <div className="mt-5">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-md font-semibold">Stock Adjusment Log</h2>
-              {/* Filter by Month */}
               <div className="flex items-center gap-2">
                 <Label htmlFor="monthFilter" className="text-sm">
                   <CalendarDays size={14} /> Filter by Month:
