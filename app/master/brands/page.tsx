@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, Edit2, Trash2 } from "lucide-react";
 import { brandService } from "@/services/brand.service";
 import { Brand } from "@/types/brand";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 
 export default function BrandPage() {
   const [page, setPage] = useState(1);
@@ -87,7 +88,7 @@ export default function BrandPage() {
               setDialogOpen(true);
             }}
           >
-            <ImportIcon /> Import
+            <CircleFadingArrowUp /> Import
           </Button>
           <Button
             onClick={() => {
@@ -95,7 +96,7 @@ export default function BrandPage() {
               setDialogOpen(true);
             }}
           >
-            <Plus /> Add Brand
+            <CirclePlus /> Add Brand
           </Button>
         </div>
       </div>
@@ -118,7 +119,17 @@ export default function BrandPage() {
             {brands.map((brand: Brand) => (
               <TableRow key={brand.id}>
                 <TableCell>{brand.name}</TableCell>
-                <TableCell>{brand.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+                <TableCell>
+                  {brand.isActive ? (
+                    <Badge>
+                      <IconCircleCheckFilled /> Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">
+                      <IconCircleXFilled /> Inactive
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell>{brand.createdBy}</TableCell>
                 <TableCell>{formatDate(brand.createdAt)}</TableCell>
                 <TableCell className="flex justify-center gap-2">
@@ -146,17 +157,18 @@ export default function BrandPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex justify-end mt-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-600">{`Showing ${brands.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + brands.length} of ${data?.pagination?.totalItems ?? 0} entries`}</div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />
           </Button>
 
-          <span>
+          <span className="text-sm">
             Page {page} of {totalPages}
           </span>
 
-          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((prev) => prev + 1)}>
+          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
             <ChevronRight />
           </Button>
         </div>

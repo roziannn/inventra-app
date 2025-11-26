@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, PlusCircle, Save, Trash2, Edit3, Package, Search, Inbox, CircleX, CircleCheck, MapPin, ArrowDownCircle, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusCircle, Save, Edit3, Package, Search, Inbox, CircleX, CircleCheck, MapPin, AlertTriangle, CircleArrowUp, MoreHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatDate } from "@/helper/formatDate";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type TrackingStatus = {
   checked: boolean;
@@ -74,7 +76,7 @@ export default function InboundPage() {
     Canceled: { checked: false, date: null },
   });
 
-  // Cancel Modal
+  // cancel modal
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelItem, setCancelItem] = useState<any>(null);
   const [cancelNote, setCancelNote] = useState("");
@@ -155,15 +157,14 @@ export default function InboundPage() {
   const cards = [
     { title: "Total Inbound", value: inboundList.length, icon: <Package className="w-5 h-5" /> },
     { title: "Received", value: statusCounts["Received"] || 0, icon: <CircleCheck className="w-5 h-5" /> },
-    { title: "Item Checking", value: statusCounts["Item Checking"] || 0, icon: <Search className="w-5 h-5" /> },
+    { title: "Item Checking", value: statusCounts["Item Checking"] || 0, icon: <Search className="w-4.5 h-4.5" /> },
     { title: "Stored", value: statusCounts["Stored"] || 0, icon: <Inbox className="w-5 h-5" /> },
-    { title: "Canceled", value: statusCounts["Canceled"] || 0, icon: <CircleX className="w-5 h-5" /> },
-    { title: "Total Expense", value: `Rp ${totalExpense.toLocaleString("id-ID")}`, icon: <ArrowDownCircle className="text-destructive w-5 h-5" /> },
+    // { title: "Canceled", value: statusCounts["Canceled"] || 0, icon: <CircleX className="w-5 h-5" /> },
+    { title: "Total Expense", value: `Rp ${totalExpense.toLocaleString("id-ID")}`, icon: <CircleArrowUp className="text-destructive w-5 h-5" /> },
   ];
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header & Add Dialog */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Inbound</h1>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -213,8 +214,7 @@ export default function InboundPage() {
         </Dialog>
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((card) => (
           <div key={card.title} className="bg-white shadow p-4 rounded-lg flex items-center gap-4">
             <div className="bg-gray-100 rounded-full p-3 flex items-center justify-center">{card.icon}</div>
@@ -226,7 +226,6 @@ export default function InboundPage() {
         ))}
       </div>
 
-      {/* Table */}
       <Table className="mt-2">
         <TableHeader>
           <TableRow>
@@ -247,26 +246,35 @@ export default function InboundPage() {
               <TableCell>{item.qty}</TableCell>
               <TableCell>{item.supplier}</TableCell>
               <TableCell>Rp {Number(item.purchasePrice).toLocaleString("id-ID")}</TableCell>
-              <TableCell>{item.date}</TableCell>
+              <TableCell>{formatDate(item.date)}</TableCell>
               <TableCell>{item.status}</TableCell>
               <TableCell>{item.note}</TableCell>
-              <TableCell className="text-center space-x-2">
-                <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(item)}>
-                  <Edit3 className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => handleTracking(item)}>
-                  <MapPin className="h-4 w-4 text-blue-600" />
-                </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => handleCancel(item)}>
-                  <CircleX className="h-4 w-4 text-red-600" />
-                </Button>
+              <TableCell className="text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(item)}>
+                      <Edit3 className="h-4 w-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleTracking(item)}>
+                      <MapPin className="h-4 w-4 mr-2 text-blue-600" /> Tracking
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleCancel(item)} className="text-red-600">
+                      <CircleX className="h-4 w-4 mr-2" /> Cancel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {/* Cancel Modal */}
+      {/* cancel modal */}
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent className="max-w-md animate-pulse flex flex-col">
           <DialogHeader>
@@ -299,7 +307,7 @@ export default function InboundPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Tracking Modal */}
+      {/* tracking modal */}
       <Dialog open={trackingOpen} onOpenChange={setTrackingOpen}>
         <DialogContent className="max-w-md flex flex-col ">
           <DialogHeader>
@@ -307,7 +315,7 @@ export default function InboundPage() {
               <div className="bg-blue-400 rounded-full p-3">
                 <MapPin className="w-6 h-6 text-white" />
               </div>
-              <span>Tracking - {trackingItem?.product}</span>
+              <span>Tracking {trackingItem?.product}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -365,31 +373,10 @@ export default function InboundPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Pagination */}
       <div className="flex justify-between items-center mt-4">
-        <div className="flex items-center gap-2 text-sm">
-          <span>Items per page:</span>
-          <Select
-            value={String(itemsPerPage)}
-            onValueChange={(value) => {
-              setItemsPerPage(parseInt(value));
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 20, 50].map((num) => (
-                <SelectItem key={num} value={String(num)}>
-                  {num}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, inboundList.length)} of ${inboundList.length} entries`}</div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />
           </Button>

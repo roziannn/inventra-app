@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, CircleEllipsis } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { productService } from "@/services/product.service";
 import Link from "next/link";
@@ -38,7 +37,6 @@ export default function StockAdjustmentListPage() {
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Supplier</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -49,11 +47,10 @@ export default function StockAdjustmentListPage() {
                 <TableCell>{formatCurrency(prod.price)}</TableCell>
                 <TableCell>{prod.stock}</TableCell>
                 <TableCell>{prod.supplier?.name ?? "-"}</TableCell>
-                <TableCell>{prod.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
                 <TableCell>
                   <Link href={`/stock-adjustment/${prod.id}`}>
-                    <Button size="sm">
-                      <Edit2 className="mr-2" /> Adjust
+                    <Button size="sm" className="text-xs">
+                      <CircleEllipsis /> Adjust
                     </Button>
                   </Link>
                 </TableCell>
@@ -63,16 +60,23 @@ export default function StockAdjustmentListPage() {
         </Table>
       )}
 
-      <div className="flex justify-end mt-6 items-center gap-4">
-        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-          <ChevronLeft />
-        </Button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-          <ChevronRight />
-        </Button>
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-600">
+          {`Showing ${data && data.data.length > 0 ? (page - 1) * limit + 1 : 0} to ${data && data.data.length > 0 ? (page - 1) * limit + data.data.length : 0} of ${data?.pagination.totalItems ?? 0} entries`}
+        </div>
+
+        {/* Pagination buttons */}
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            <ChevronLeft />
+          </Button>
+          <span className="text-sm">
+            Page {page} of {totalPages}
+          </span>
+          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+            <ChevronRight />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Frame, SquareTerminal, PieChart, Settings2, GalleryVerticalEnd, AudioWaveform, Command, Archive } from "lucide-react";
+import { SquareTerminal, GalleryVerticalEnd, AudioWaveform, Command, Archive, Container, ChartPie } from "lucide-react";
 
 import { NavGeneral } from "@/components/nav-general";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
+import { NavSingle } from "@/components/nav-single-item";
 
 const data = {
   user: {
@@ -32,19 +33,15 @@ const data = {
     },
   ],
 
-  navGeneral: [
-    // Dashboard
+  navSingle: [
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: PieChart,
-      isActive: true,
-      items: [
-        { title: "Overview", url: "/dashboard" },
-        { title: "Low Stock", url: "/dashboard/low-stock" },
-      ],
+      icon: ChartPie,
     },
+  ],
 
+  navGeneral: [
     // Master Data
     {
       title: "Master",
@@ -70,19 +67,20 @@ const data = {
         { title: "Inbound", url: "/products/inbound" },
         { title: "Outbound", url: "/products/outbound" },
         { title: "Stock Adjustment", url: "/stock-adjustment" },
+        // { title: "Manage Storage", url: "/products/manage-storage" },
       ],
     },
 
     // Stock In
-    // {
-    //   title: "Stock In",
-    //   url: "/stock-in",
-    //   icon: Frame,
-    //   items: [
-    //     { title: "Inbound List", url: "/stock-in" },
-    //     { title: "Add Inbound", url: "/stock-in/add" },
-    //   ],
-    // },
+    {
+      title: "Storage",
+      url: "/stock-in",
+      icon: Container,
+      items: [
+        { title: "Manage Storage", url: "/storage/manage-storage" },
+        // { title: "Add Inbound", url: "/stock-in/add" },
+      ],
+    },
 
     // Stock Out
     // {
@@ -96,16 +94,16 @@ const data = {
     // },
 
     // Reports
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: PieChart,
-      items: [
-        { title: "Stock Report", url: "/reports/stock" },
-        { title: "Inbound Report", url: "/reports/inbound" },
-        { title: "Outbound Report", url: "/reports/outbound" },
-      ],
-    },
+    // {
+    //   title: "Reports",
+    //   url: "/reports",
+    //   icon: PieChart,
+    //   items: [
+    //     { title: "Stock Report", url: "/reports/stock" },
+    //     { title: "Inbound Report", url: "/reports/inbound" },
+    //     { title: "Outbound Report", url: "/reports/outbound" },
+    //   ],
+    // },
   ],
 };
 
@@ -117,6 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
+        <NavSingle items={data.navSingle} />
         <NavGeneral items={data.navGeneral} />
       </SidebarContent>
 

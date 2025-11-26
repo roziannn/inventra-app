@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, Edit2, Trash2 } from "lucide-react";
 import { categoryService } from "@/services/category.service";
 import { Category } from "@/types/category";
 import { formatDate } from "@/helper/formatDate";
@@ -31,6 +31,9 @@ export default function CategoryPage() {
     queryFn: () => categoryService.getAllPaged(page, limit),
     // keepPreviousData: true,
   });
+
+  const categories = data?.data || [];
+  const totalPages = data?.pagination?.totalPages || 1;
 
   const createMutation = useMutation({
     mutationFn: () => categoryService.create(categoryName),
@@ -62,19 +65,21 @@ export default function CategoryPage() {
   const resetForm = () => {
     setCategoryName("");
     setEditId(null);
+    setEditIsActive(true);
     setDialogOpen(false);
   };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error loading categories</p>;
+  if (isLoading) return <p className="p-6">Loading...</p>;
+  if (isError) return <p className="p-6 text-red-500">Error loading categories</p>;
 
   return (
     <div className="p-6">
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold">Categories</h1>
         <div className="flex gap-2">
           <Button variant="outline">
-            <ImportIcon /> Import
+            <CircleFadingArrowUp /> Import
           </Button>
           <Button
             onClick={() => {
@@ -82,7 +87,7 @@ export default function CategoryPage() {
               setDialogOpen(true);
             }}
           >
-            <Plus /> Add Category
+            <CirclePlus /> Add Category
           </Button>
         </div>
       </div>
@@ -99,7 +104,7 @@ export default function CategoryPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.data.map((cat: Category) => (
+          {categories.map((cat: Category) => (
             <TableRow key={cat.id}>
               <TableCell>{cat.name}</TableCell>
               <TableCell>{cat.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
@@ -119,7 +124,6 @@ export default function CategoryPage() {
                 >
                   <Edit2 />
                 </Button>
-
                 <Button size="icon-sm" variant="destructive" onClick={() => deleteMutation.mutate(cat.id)}>
                   <Trash2 />
                 </Button>
@@ -130,36 +134,45 @@ export default function CategoryPage() {
       </Table>
 
       {/* PAGINATION */}
-      <div className="flex justify-end mt-6">
-        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
-          <ChevronLeft />
-        </Button>
-        <span className="text-sm px-4">
-          Page {page} of {data?.pagination.totalPages}
-        </span>
-        <Button variant="outline" size="sm" disabled={page === data?.pagination.totalPages} onClick={() => setPage(page + 1)}>
-          <ChevronRight />
-        </Button>
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-600">{`Showing ${categories.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + categories.length} of ${data?.pagination?.totalItems ?? 0} entries`}</div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+            <ChevronLeft />
+          </Button>
+
+          <span className="text-sm">
+            Page {page} of {totalPages}
+          </span>
+
+          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+            <ChevronRight />
+          </Button>
+        </div>
       </div>
 
       {/* DIALOG FORM */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md w-full">
           <DialogHeader>
             <DialogTitle>{dialogMode === "add" ? "Add Category" : "Edit Category"}</DialogTitle>
           </DialogHeader>
 
-          <Label>Name</Label>
-          <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
+          <div className="grid gap-4">
+            <Label>Name</Label>
+            <Input value={categoryName} onChange={(e) => setCategoryName(e.target.value)} />
 
-          {dialogMode === "edit" && (
-            <div className="flex items-center gap-2 py-2">
-              <Label>Status</Label>
-              <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
-            </div>
-          )}
+            {dialogMode === "edit" && (
+              <div className="flex items-center gap-2">
+                <Label>Status</Label>
+                <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
+              </div>
+            )}
 
-          <Button onClick={dialogMode === "add" ? () => createMutation.mutate() : () => updateMutation.mutate()}>Save</Button>
+            <Button className="mt-4" onClick={dialogMode === "add" ? () => createMutation.mutate() : () => updateMutation.mutate()}>
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

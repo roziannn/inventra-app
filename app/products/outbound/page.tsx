@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, PlusCircle, Save, Trash2, Edit3, Truck, CheckCircle2, XCircle, Package, Wallet, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusCircle, Save, Trash2, Edit3, Truck, CheckCircle2, Package, Wallet, FileText, CircleArrowDown, MoreHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatDate } from "@/helper/formatDate";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function OutboundPage() {
   const [outboundList, setOutboundList] = useState([
@@ -119,9 +121,9 @@ export default function OutboundPage() {
     { title: "Total Outbound", value: outboundList.length, icon: <Package className="h-5 w-5" /> },
     { title: "Sent", value: statusCounts["Sent"] || 0, icon: <Truck className="h-5 w-5" /> },
     { title: "Delivered", value: statusCounts["Delivered"] || 0, icon: <CheckCircle2 className="h-5 w-5" /> },
-    { title: "Canceled", value: statusCounts["Canceled"] || 0, icon: <XCircle className="h-5 w-5" /> },
+    // { title: "Canceled", value: statusCounts["Canceled"] || 0, icon: <XCircle className="h-5 w-5" /> },
     { title: "Operational Cost", value: `Rp ${totalOperationalCost.toLocaleString("id-ID")}`, icon: <Wallet className="h-5 w-5" /> },
-    { title: "Total Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <Wallet className="h-5 w-5" /> },
+    { title: "Total Earning", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary  h-5 w-5" /> },
   ];
 
   return (
@@ -260,7 +262,7 @@ export default function OutboundPage() {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((card) => (
           <div key={card.title} className="bg-white shadow p-4 rounded-lg flex items-center gap-4">
             <div className="bg-gray-100 rounded-full p-3 flex items-center justify-center">{card.icon}</div>
@@ -299,7 +301,7 @@ export default function OutboundPage() {
               <TableCell>Rp {Number(item.sellingPrice).toLocaleString("id-ID")}</TableCell>
               <TableCell>Rp {Number(item.operationalCost || 0).toLocaleString("id-ID")}</TableCell>
               <TableCell>Rp {(Number(item.sellingPrice || 0) + Number(item.operationalCost || 0)).toLocaleString("id-ID")}</TableCell>
-              <TableCell>{item.date}</TableCell>
+              <TableCell>{formatDate(item.date)}</TableCell>
               <TableCell>{item.status}</TableCell>
               <TableCell>{item.courier || "-"}</TableCell>
               <TableCell className="flex justify-center items-center gap-2">
@@ -319,13 +321,24 @@ export default function OutboundPage() {
                 )}
               </TableCell>
 
-              <TableCell className="text-center space-x-2">
-                <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(item)}>
-                  <Edit3 className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(item.id)}>
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </Button>
+              <TableCell className="text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(item)}>
+                      <Edit3 className="h-4 w-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => handleDelete(item.id)} className="text-red-600">
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
@@ -334,29 +347,9 @@ export default function OutboundPage() {
 
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4">
-        <div className="flex items-center gap-2 text-sm">
-          <span>Items per page:</span>
-          <Select
-            value={String(itemsPerPage)}
-            onValueChange={(value) => {
-              setItemsPerPage(parseInt(value));
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 20, 50].map((num) => (
-                <SelectItem key={num} value={String(num)}>
-                  {num}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, outboundList.length)} of ${outboundList.length} entries`}</div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />
           </Button>

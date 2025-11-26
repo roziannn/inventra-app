@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, SquarePen, Trash } from "lucide-react";
 import { storageLocationService } from "@/services/storage-locations.service";
 import { StorageLocation } from "@/types/storage-locations";
 import { formatDate } from "@/helper/formatDate";
@@ -103,7 +103,7 @@ export default function StorageLocationPage() {
         <h1 className="text-xl font-semibold">Storage Locations</h1>
         <div className="flex gap-2">
           <Button variant="outline">
-            <ImportIcon /> Import
+            <CircleFadingArrowUp /> Import
           </Button>
 
           <Button
@@ -112,7 +112,7 @@ export default function StorageLocationPage() {
               setDialogOpen(true);
             }}
           >
-            <Plus /> Add Location
+            <CirclePlus /> Add Location
           </Button>
         </div>
       </div>
@@ -168,11 +168,11 @@ export default function StorageLocationPage() {
                       setDialogOpen(true);
                     }}
                   >
-                    <Edit2 />
+                    <SquarePen />
                   </Button>
 
                   <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(loc.id)}>
-                    <Trash2 />
+                    <Trash />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -182,14 +182,17 @@ export default function StorageLocationPage() {
       )}
 
       {/* PAGINATION */}
-      <div className="flex justify-end mt-6">
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-between items-center mt-4">
+        {/* <div className="text-sm text-gray-600">{`Showing ${categories.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + categories.length} of ${data?.pagination?.totalItems ?? 0} entries`}</div> */}
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />
           </Button>
-          <span>
+
+          <span className="text-sm">
             Page {page} of {totalPages}
           </span>
+
           <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
             <ChevronRight />
           </Button>

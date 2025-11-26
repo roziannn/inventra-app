@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Plus, Trash2, MoreHorizontal, Edit3, PrinterIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, MoreHorizontal, Edit3, PrinterIcon, CirclePlus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -191,7 +191,7 @@ export default function ProductPage() {
             setDialogOpen(true);
           }}
         >
-          <Plus /> Add Product
+          <CirclePlus /> Add Product
         </Button>
       </div>
 
@@ -269,17 +269,20 @@ export default function ProductPage() {
         </Table>
       )}
 
-      {/* Pagination */}
-      <div className="flex justify-end mt-6 items-center gap-4">
-        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-          <ChevronLeft />
-        </Button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-          <ChevronRight />
-        </Button>
+      {/* pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <div className="text-sm text-gray-600">{`Showing ${products.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + products.length} of ${data?.pagination.totalItems ?? 0} entries`}</div>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            <ChevronLeft />
+          </Button>
+          <span className="text-sm">
+            Page {page} of {totalPages}
+          </span>
+          <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+            <ChevronRight />
+          </Button>
+        </div>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
