@@ -47,6 +47,7 @@ export async function POST(req: Request) {
 
     const newBrand = await prisma.brand.create({
       data: {
+        id: crypto.randomUUID(),
         name: body.name,
         createdBy,
       },

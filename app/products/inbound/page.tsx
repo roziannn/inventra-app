@@ -1,76 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, PlusCircle, Save, Edit3, Package, Search, Inbox, CircleX, CircleCheck, MapPin, AlertTriangle, CircleArrowUp, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusCircle, Save, Edit3, Package, Search, Inbox, CircleCheck, CircleArrowUp, MoreHorizontal } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { formatDate } from "@/helper/formatDate";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useQuery } from "@tanstack/react-query";
 import { supplierService } from "@/services/supplier.service";
 import { productService } from "@/services/product.service";
+import { inboundClient } from "@/services/client/inbound.client";
+import { formatDate } from "@/helper/formatDate";
 import { inputCurrency } from "@/helper/inputCurrency";
-
-type TrackingStatus = {
-  checked: boolean;
-  date: string | null;
-};
+import { CreateInboundDto, InboundListDto, UpdateInboundDto } from "@/types/inbound";
 
 export default function InboundPage() {
-  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
-    queryKey: ["suppliers-lov"],
-    queryFn: supplierService.getLOV,
-  });
+  const queryClient = useQueryClient();
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({
-    queryKey: ["products-lov"],
-    queryFn: productService.getLOV,
-  });
-
-  const [inboundList, setInboundList] = useState([
-    {
-      id: 1,
-      product: "Product 1",
-      qty: 10,
-      supplier: "Supplier A",
-      purchasePrice: 200000,
-      date: "2025-01-01",
-      status: "Received",
-      note: "Urgent order",
-      tracking: {
-        Received: { checked: true, date: "2025-01-01" },
-        "Item Checking": { checked: false, date: null },
-        "Storage Checking": { checked: false, date: null },
-        Stored: { checked: false, date: null },
-        Canceled: { checked: false, date: null },
-      },
-    },
-    {
-      id: 2,
-      product: "Product 2",
-      qty: 5,
-      supplier: "Supplier B",
-      purchasePrice: 120000,
-      date: "2025-01-03",
-      status: "Stored",
-      note: "",
-      tracking: {
-        Received: { checked: true, date: "2025-01-03" },
-        "Item Checking": { checked: true, date: "2025-01-03" },
-        "Storage Checking": { checked: true, date: "2025-01-03" },
-        Stored: { checked: true, date: "2025-01-03" },
-        Canceled: { checked: false, date: null },
-      },
-    },
-  ]);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [open, setOpen] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     product: "",
     qty: "",
@@ -81,101 +35,100 @@ export default function InboundPage() {
     note: "",
   });
 
-  const [trackingOpen, setTrackingOpen] = useState(false);
-  const [trackingItem, setTrackingItem] = useState<any>(null);
-  const [trackingStatus, setTrackingStatus] = useState<Record<string, TrackingStatus>>({
-    Received: { checked: false, date: null },
-    "Item Checking": { checked: false, date: null },
-    "Storage Checking": { checked: false, date: null },
-    Stored: { checked: false, date: null },
-    Canceled: { checked: false, date: null },
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
+    queryKey: ["suppliers-lov"],
+    queryFn: supplierService.getLOV,
   });
 
-  // cancel modal
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [cancelItem, setCancelItem] = useState<any>(null);
-  const [cancelNote, setCancelNote] = useState("");
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ["products-lov"],
+    queryFn: productService.getLOV,
+  });
 
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  //get all data
+  const { data: inboundRes } = useQuery({ queryKey: ["inbounds"], queryFn: () => inboundClient.getAll() });
+  const inboundList = inboundRes?.data ?? [];
+
   const totalPages = Math.ceil(inboundList.length / itemsPerPage);
   const startIndex = (page - 1) * itemsPerPage;
   const paginatedData = inboundList.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleSubmit = (e: any) => {
+  // create
+  const createInbound = useMutation({
+    mutationFn: (payload: CreateInboundDto) => inboundClient.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbounds"] });
+      resetForm();
+    },
+  });
+
+  //update
+  const updateInbound = useMutation({
+    mutationFn: (payload: UpdateInboundDto) => inboundClient.update(editingItemId!, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbounds"] });
+      resetForm();
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const productObj = products.find((p) => p.name === formData.product);
+    const supplierObj = suppliers.find((s) => s.name === formData.supplier);
+
+    if (!productObj || !supplierObj) return alert("Product and Supplier must be selected");
+
+    const payload: CreateInboundDto = {
+      productId: productObj.id,
+      supplierId: supplierObj.id,
+      qty: Number(formData.qty),
+      purchasePrice: Number(formData.purchasePrice),
+      totalPrice: Number(formData.purchasePrice) * Number(formData.qty),
+      note: formData.note,
+      status: "RECEIVED",
+      createdBy: "administrator",
+    };
+
     if (editingItemId) {
-      setInboundList((prev) => prev.map((item) => (item.id === editingItemId ? { ...item, ...formData } : item)));
+      updateInbound.mutate(payload);
     } else {
-      const newEntry = {
-        ...formData,
-        id: inboundList.length + 1,
-        status: "Received",
-        purchasePrice: parseInt(formData.purchasePrice),
-        tracking: {
-          Received: { checked: true, date: formData.date || new Date().toLocaleDateString("id-ID") },
-          "Item Checking": { checked: false, date: null },
-          "Storage Checking": { checked: false, date: null },
-          Stored: { checked: false, date: null },
-          Canceled: { checked: false, date: null },
-        },
-      };
-      setInboundList([newEntry, ...inboundList]);
+      createInbound.mutate(payload);
     }
-    setFormData({ product: "", qty: "", supplier: "", purchasePrice: "", date: "", note: "" });
-    setEditingItemId(null);
-    setOpen(false);
   };
 
-  const handleEdit = (item: any) => {
-    setFormData(item);
+  const handleEdit = (item: InboundListDto) => {
+    setFormData({
+      product: item.product,
+      supplier: item.supplier ?? "",
+      qty: String(item.qty),
+      purchasePrice: String(item.purchasePrice),
+      purchasePriceDisplay: inputCurrency(String(item.purchasePrice)),
+      date: item.date,
+      note: item.note ?? "",
+    });
     setEditingItemId(item.id);
     setOpen(true);
   };
 
-  const handleCancel = (item: any) => {
-    setCancelItem(item);
-    setCancelNote(item.note || "");
-    setCancelOpen(true);
+  const resetForm = () => {
+    setEditingItemId(null);
+    setFormData({ product: "", qty: "", supplier: "", purchasePrice: "", purchasePriceDisplay: "", date: "", note: "" });
+    setOpen(false);
   };
 
-  const confirmCancel = () => {
-    if (!cancelItem) return;
-    setInboundList((prev) =>
-      prev.map((item) =>
-        item.id === cancelItem.id
-          ? {
-              ...item,
-              status: "Canceled",
-              note: cancelNote,
-              tracking: { ...item.tracking, Canceled: { checked: true, date: new Date().toLocaleDateString("id-ID") } },
-            }
-          : item
-      )
-    );
-    setCancelOpen(false);
-    setCancelItem(null);
-    setCancelNote("");
-  };
-
-  const handleTracking = (item: any) => {
-    setTrackingItem(item);
-    setTrackingStatus(item.tracking);
-    setTrackingOpen(true);
-  };
-
-  // Summary Cards
+  // summary cards
+  const totalExpense = inboundList.reduce((acc, curr) => acc + Number(curr.purchasePrice), 0);
   const statusCounts = inboundList.reduce((acc, curr) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  const totalExpense = inboundList.reduce((acc, curr) => acc + Number(curr.purchasePrice), 0);
+
   const cards = [
     { title: "Total Inbound", value: inboundList.length, icon: <Package className="w-5 h-5" /> },
-    { title: "Received", value: statusCounts["Received"] || 0, icon: <CircleCheck className="w-5 h-5" /> },
-    { title: "Item Checking", value: statusCounts["Item Checking"] || 0, icon: <Search className="w-4.5 h-4.5" /> },
-    { title: "Stored", value: statusCounts["Stored"] || 0, icon: <Inbox className="w-5 h-5" /> },
-    // { title: "Canceled", value: statusCounts["Canceled"] || 0, icon: <CircleX className="w-5 h-5" /> },
+    { title: "Received", value: statusCounts["RECEIVED"] || 0, icon: <CircleCheck className="w-5 h-5" /> },
+    { title: "Item Checking", value: statusCounts["ITEM CHECKING"] || 0, icon: <Search className="w-4.5 h-4.5" /> },
+    { title: "Stored", value: statusCounts["STORED"] || 0, icon: <Inbox className="w-5 h-5" /> },
     { title: "Total Expense", value: `Rp ${totalExpense.toLocaleString("id-ID")}`, icon: <CircleArrowUp className="text-destructive w-5 h-5" /> },
   ];
 
@@ -184,7 +137,7 @@ export default function InboundPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-xl font-bold">Inbound</h1>
-          <p className="text-sm text-muted-foreground">Manage your inboud product data here</p>
+          <p className="text-sm text-muted-foreground">Manage your inbound product data here</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -228,13 +181,12 @@ export default function InboundPage() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label>Quantity</Label>
                 <Input type="number" required value={formData.qty} onChange={(e) => setFormData({ ...formData, qty: e.target.value })} />
               </div>
               <div>
-                <Label>Purchase Price</Label>
+                <Label>Purchase Price/item </Label>
                 <div className="flex items-center border rounded-md overflow-hidden">
                   <span className="bg-gray-100 px-2 py-2 text-sm text-gray-700 border-r">Rp</span>
                   <Input
@@ -244,16 +196,11 @@ export default function InboundPage() {
                     value={formData.purchasePriceDisplay || ""}
                     onChange={(e) => {
                       const rawValue = e.target.value.replace(/[^\d]/g, "");
-                      setFormData({
-                        ...formData,
-                        purchasePrice: rawValue,
-                        purchasePriceDisplay: inputCurrency(e.target.value),
-                      });
+                      setFormData({ ...formData, purchasePrice: rawValue, purchasePriceDisplay: inputCurrency(e.target.value) });
                     }}
                   />
                 </div>
               </div>
-
               <div className="col-span-2">
                 <Label>Receive Date</Label>
                 <Input type="date" required value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
@@ -303,7 +250,7 @@ export default function InboundPage() {
             <TableRow key={item.id}>
               <TableCell>{item.product}</TableCell>
               <TableCell>{item.qty}</TableCell>
-              <TableCell>{suppliers.find((s) => s.id.toString() === item.supplier)?.name || item.supplier}</TableCell>
+              <TableCell>{item.supplier}</TableCell>
               <TableCell>Rp {Number(item.purchasePrice).toLocaleString("id-ID")}</TableCell>
               <TableCell>{formatDate(item.date)}</TableCell>
               <TableCell>{item.status}</TableCell>
@@ -319,12 +266,6 @@ export default function InboundPage() {
                     <DropdownMenuItem onClick={() => handleEdit(item)}>
                       <Edit3 className="h-4 w-4 mr-2" /> Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleTracking(item)}>
-                      <MapPin className="h-4 w-4 mr-2 text-blue-600" /> Tracking
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleCancel(item)} className="text-red-600">
-                      <CircleX className="h-4 w-4 mr-2" /> Cancel
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -333,108 +274,8 @@ export default function InboundPage() {
         </TableBody>
       </Table>
 
-      {/* cancel modal */}
-      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
-        <DialogContent className="max-w-md animate-pulse flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-lg flex flex-col text-center items-center gap-2">
-              <div className="bg-yellow-400 rounded-full p-3">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <span>Are you sure to cancel this inbound?</span>
-            </DialogTitle>
-            <span className="text-md text-center">Total item will be returned and this action cannot be undone.</span>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <p className="text-gray-700 font-medium">{cancelItem?.product}</p>
-            <p className="text-gray-700 font-medium">Qty: {cancelItem?.qty}</p>
-            <div className="w-full pt-2">
-              <Label className="text-red-500 font-semibold pb-1">Cancellation Note</Label>
-              <Input onChange={(e) => setCancelNote(e.target.value)} placeholder="Add reason for cancellation" required autoFocus />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6 w-full">
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>
-              No
-            </Button>
-            <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={confirmCancel}>
-              Yes, Cancel
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* tracking modal */}
-      <Dialog open={trackingOpen} onOpenChange={setTrackingOpen}>
-        <DialogContent className="max-w-md flex flex-col ">
-          <DialogHeader>
-            <DialogTitle className="text-lg flex flex-col items-center gap-2">
-              <div className="bg-blue-400 rounded-full p-3">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <span>Tracking {trackingItem?.product}</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex flex-col space-y-2 mt-4 w-full">
-            {Object.keys(trackingStatus).map((status) => (
-              <div key={status} className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={trackingStatus[status].checked}
-                    onCheckedChange={(checked) =>
-                      setTrackingStatus((prev) => ({
-                        ...prev,
-                        [status]: {
-                          checked: Boolean(checked),
-                          date: checked ? prev[status].date || new Date().toLocaleDateString("id-ID") : null,
-                        },
-                      }))
-                    }
-                  />
-                  <span>{status}</span>
-                </div>
-                <span className="text-xs text-gray-500">{trackingStatus[status].date || "-"}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end gap-2 mt-4 w-full">
-            <Button variant="outline" onClick={() => setTrackingOpen(false)}>
-              Close
-            </Button>
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => {
-                const lastCheckedStatus = Object.keys(trackingStatus)
-                  .reverse()
-                  .find((s) => trackingStatus[s].checked);
-
-                setInboundList((prev) =>
-                  prev.map((i) =>
-                    i.id === trackingItem.id
-                      ? {
-                          ...i,
-                          status: lastCheckedStatus || i.status,
-                          tracking: trackingStatus,
-                        }
-                      : i
-                  )
-                );
-                setTrackingOpen(false);
-              }}
-            >
-              Save
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <div className="flex justify-between items-center mt-4">
         <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, inboundList.length)} of ${inboundList.length} entries`}</div>
-
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />

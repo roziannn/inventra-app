@@ -50,6 +50,7 @@ model product {
   updatedAt         DateTime?
   updatedBy         String?
   brandId           String?
+  inbound           inbound[]
   brand             brand?            @relation(fields: [brandId], references: [id], map: "Product_brandId_fkey")
   category          category          @relation(fields: [productCategoryId], references: [id], map: "Product_productCategoryId_fkey")
   storagelocation   storagelocation   @relation(fields: [storageLocationId], references: [id], map: "Product_storageLocationId_fkey")
@@ -104,6 +105,7 @@ model supplier {
   createdBy String?
   updatedAt DateTime?
   updatedBy String?
+  inbound   inbound[]
   product   product[]
 }
 
@@ -116,6 +118,31 @@ model user {
   createdBy String?
   updatedAt DateTime?
   updatedBy String?
+}
+
+model inbound {
+  id               String          @id
+  productId        String
+  supplierId       String?
+  qty              Int
+  purchasePrice    Decimal         @db.Decimal(15, 2)
+  totalPrice       Decimal?        @default(0.00) @db.Decimal(15, 2)
+  status           inbound_status? @default(RECEIVED)
+  receiveDate      DateTime?       @default(now()) @db.DateTime(0)
+  itemCheckingDate DateTime?       @db.DateTime(0)
+  storedDate       DateTime?       @db.DateTime(0)
+  canceledDate     DateTime?       @db.DateTime(0)
+  canceledNote     String?         @db.VarChar(255)
+  note             String?         @db.VarChar(255)
+  createdAt        DateTime?       @default(now()) @db.DateTime(0)
+  createdBy        String?         @db.VarChar(100)
+  updatedAt        DateTime?       @db.DateTime(0)
+  updatedBy        String?         @db.VarChar(100)
+  product          product         @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_inbound_product")
+  supplier         supplier?       @relation(fields: [supplierId], references: [id], onUpdate: Restrict, map: "fk_inbound_supplier")
+
+  @@index([productId], map: "fk_inbound_product")
+  @@index([supplierId], map: "fk_inbound_supplier")
 }
 
 enum storagelocation_type {
@@ -132,4 +159,10 @@ enum product_condition {
   Used
   Refurbished
 }
-  
+
+enum inbound_status {
+  RECEIVED
+  CHECKING
+  STORED
+  CANCELED
+}

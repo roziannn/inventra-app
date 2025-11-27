@@ -10,9 +10,9 @@ export interface Product {
   supplierId?: string;
   productCategoryId: string;
   condition: "New" | "Used" | "Refurbished";
-  restockDate: Date; // Tanggal restock terakhir
-  imageUrl?: string; // Link gambar produk (opsional)
-  barcode?: string; // Barcode atau SKU (opsional)
+  restockDate: Date;
+  imageUrl?: string;
+  barcode?: string;
 
   supplier?: { id: string; name: string };
   category?: { id: string; name: string };
