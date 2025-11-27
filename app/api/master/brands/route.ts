@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// ========= GET =========
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -34,7 +33,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ========= POST =========
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -60,7 +58,6 @@ export async function POST(req: Request) {
   }
 }
 
-// ========= DELETE =========
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
@@ -80,7 +77,6 @@ export async function DELETE(req: Request) {
   }
 }
 
-// ========= PATCH =========
 export async function PATCH(req: Request) {
   try {
     const url = new URL(req.url);

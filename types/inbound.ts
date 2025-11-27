@@ -39,6 +39,7 @@ export interface UpdateInboundDto {
   totalPrice?: number;
   status?: InboundStatus;
   itemCheckingDate?: string;
+  receiveDate?: string;
   storedDate?: string;
   canceledDate?: string;
   canceledNote?: string;
@@ -46,6 +47,15 @@ export interface UpdateInboundDto {
   updatedAt?: string;
   updatedBy?: string;
 }
+
+export type UpdateTrackingDto = {
+  receiveDate?: Date | null;
+  itemCheckingDate?: Date | null;
+  storedDate?: Date | null;
+  canceledDate?: Date | null;
+  updatedBy?: Date | null;
+  status: string;
+};
 
 export type InboundListDto = {
   id: string;
@@ -56,6 +66,10 @@ export type InboundListDto = {
   date: string;
   status: string;
   note?: string | null;
+  receiveDate?: string | null;
+  itemCheckingDate?: string | null;
+  storedDate?: string | null;
+  canceledDate?: string | null;
 };
 
 export type InboundItem = {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, PlusCircle, Save, Edit3, Package, Search, Inbox, CircleCheck, CircleArrowUp, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusCircle, Save, Edit3, Package, Inbox, CircleCheck, CircleArrowUp, MoreHorizontal, CircleX, MapPinCheck, Truck, SearchCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { productService } from "@/services/product.service";
 import { inboundClient } from "@/services/client/inbound.client";
 import { formatDate } from "@/helper/formatDate";
 import { inputCurrency } from "@/helper/inputCurrency";
-import { CreateInboundDto, InboundListDto, UpdateInboundDto } from "@/types/inbound";
+import { CreateInboundDto, InboundListDto, UpdateInboundDto, UpdateTrackingDto } from "@/types/inbound";
 
 export default function InboundPage() {
   const queryClient = useQueryClient();
@@ -111,11 +111,41 @@ export default function InboundPage() {
     setOpen(true);
   };
 
+  const [cancelingItem, setCancelingItem] = useState<InboundListDto | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
+
+  const cancelInbound = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string; canceledNote: string }) => inboundClient.cancel(id, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbounds"] });
+      setCancelingItem(null);
+      setCancelNote("");
+    },
+  });
+
   const resetForm = () => {
     setEditingItemId(null);
     setFormData({ product: "", qty: "", supplier: "", purchasePrice: "", purchasePriceDisplay: "", date: "", note: "" });
     setOpen(false);
   };
+
+  const [trackingItem, setTrackingItem] = useState<InboundListDto | null>(null);
+  const fetchTrackingItem = useMutation({
+    mutationFn: (id: string) => inboundClient.getById(id),
+    onSuccess: (data) => setTrackingItem(data),
+  });
+
+  const updateTracking = useMutation({
+    mutationFn: (payload: UpdateTrackingDto) => inboundClient.updateTracking(trackingItem!.id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbounds"] });
+    },
+    onSettled: () => {
+      if (trackingItem) {
+        fetchTrackingItem.mutate(trackingItem.id);
+      }
+    },
+  });
 
   // summary cards
   const totalExpense = inboundList.reduce((acc, curr) => acc + Number(curr.purchasePrice), 0);
@@ -127,7 +157,7 @@ export default function InboundPage() {
   const cards = [
     { title: "Total Inbound", value: inboundList.length, icon: <Package className="w-5 h-5" /> },
     { title: "Received", value: statusCounts["RECEIVED"] || 0, icon: <CircleCheck className="w-5 h-5" /> },
-    { title: "Item Checking", value: statusCounts["ITEM CHECKING"] || 0, icon: <Search className="w-4.5 h-4.5" /> },
+    { title: "Checking", value: statusCounts["CHECKING"] || 0, icon: <SearchCheck className="w-4.5 h-4.5" /> },
     { title: "Stored", value: statusCounts["STORED"] || 0, icon: <Inbox className="w-5 h-5" /> },
     { title: "Total Expense", value: `Rp ${totalExpense.toLocaleString("id-ID")}`, icon: <CircleArrowUp className="text-destructive w-5 h-5" /> },
   ];
@@ -239,7 +269,7 @@ export default function InboundPage() {
             <TableHead>Qty</TableHead>
             <TableHead>Supplier</TableHead>
             <TableHead>Purchase Price</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead>Received Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Note</TableHead>
             <TableHead className="text-center">Actions</TableHead>
@@ -263,8 +293,15 @@ export default function InboundPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => fetchTrackingItem.mutate(item.id)}>
+                      <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
+                    </DropdownMenuItem>
+
                     <DropdownMenuItem onClick={() => handleEdit(item)}>
                       <Edit3 className="h-4 w-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setCancelingItem(item)}>
+                      <CircleX className="h-4 w-4 mr-2" /> Cancel
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -273,6 +310,156 @@ export default function InboundPage() {
           ))}
         </TableBody>
       </Table>
+      <Dialog open={!!trackingItem} onOpenChange={() => setTrackingItem(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tracking Progress</DialogTitle>
+          </DialogHeader>
+
+          {trackingItem && (
+            <div className="space-y-4 mt-4">
+              {/* Received */}
+              <div className="flex items-center justify-between border shadow-sm p-4 rounded-lg">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 font-semibold text-gray-700">
+                    <Truck className="w-4 h-4" />
+                    <span>Receive</span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">Item sudah diterima</p>
+                  {trackingItem.receiveDate && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">{formatDate(trackingItem.receiveDate)}</p>}
+                </div>
+                <Button
+                  size="sm"
+                  variant={!!trackingItem.receiveDate ? "destructive" : "default"}
+                  className="whitespace-nowrap"
+                  onClick={() =>
+                    updateTracking.mutate({
+                      receiveDate: new Date(),
+                      status: "RECEIVED",
+                    })
+                  }
+                  disabled={!!trackingItem.receiveDate}
+                >
+                  {trackingItem.receiveDate ? "Received" : "Mark as Received"}
+                </Button>
+              </div>
+
+              {/* Item Checking */}
+              <div className="flex items-center justify-between border shadow-sm p-4 rounded-lg">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 font-semibold text-gray-700">
+                    <SearchCheck className="w-4 h-4" />
+                    <span>Item Checking</span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">Sedang pengecekan barang</p>
+                  {trackingItem.itemCheckingDate && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">{formatDate(trackingItem.itemCheckingDate)}</p>}
+                </div>
+                <Button
+                  size="sm"
+                  variant={!!trackingItem.itemCheckingDate ? "destructive" : "default"}
+                  className="whitespace-nowrap"
+                  onClick={() =>
+                    updateTracking.mutate({
+                      itemCheckingDate: new Date(),
+                      status: "CHECKING",
+                    })
+                  }
+                  disabled={!!trackingItem.itemCheckingDate}
+                >
+                  {trackingItem.itemCheckingDate ? "Checked" : "Mark as Checking"}
+                </Button>
+              </div>
+
+              {/* Stored */}
+              <div className="flex items-center justify-between border shadow-sm p-4 rounded-lg">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 font-semibold text-gray-700">
+                    <Inbox className="w-4 h-4" />
+                    <span>Stored</span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">Barang sudah disimpan ke gudang</p>
+                  {trackingItem.storedDate && <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">{formatDate(trackingItem.storedDate)}</p>}
+                </div>
+                <Button
+                  size="sm"
+                  variant={!!trackingItem.storedDate ? "destructive" : "default"}
+                  className="whitespace-nowrap"
+                  onClick={() =>
+                    updateTracking.mutate({
+                      storedDate: new Date(),
+                      status: "STORED",
+                    })
+                  }
+                  disabled={!!trackingItem.storedDate}
+                >
+                  {trackingItem.storedDate ? "Stored" : "Mark as Stored"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setTrackingItem(null)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!cancelingItem}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setCancelingItem(null);
+            setCancelNote("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Inbound Item</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-red-600 font-semibold mb-2">Canceling cannot be undone!</p>
+          {cancelingItem && (
+            <div className="space-y-6">
+              <div>
+                <Label>Product</Label>
+                <Input value={cancelingItem.product} disabled />
+              </div>
+              <div>
+                <Label>Quantity</Label>
+                <Input value={cancelingItem.qty} disabled />
+              </div>
+              <div>
+                <Label>Cancel Note</Label>
+                <Input value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} placeholder="Reason for cancel" />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setCancelingItem(null)}>
+              Close
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!cancelNote.trim()) {
+                  alert("Cancel note is required");
+                  return;
+                }
+                if (cancelingItem) {
+                  cancelInbound.mutate({ id: cancelingItem.id, canceledNote: cancelNote });
+                }
+              }}
+            >
+              Confirm Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-between items-center mt-4">
         <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, inboundList.length)} of ${inboundList.length} entries`}</div>

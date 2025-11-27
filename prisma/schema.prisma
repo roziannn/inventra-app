@@ -51,6 +51,7 @@ model product {
   updatedBy         String?
   brandId           String?
   inbound           inbound[]
+  outbound          outbound[]
   brand             brand?            @relation(fields: [brandId], references: [id], map: "Product_brandId_fkey")
   category          category          @relation(fields: [productCategoryId], references: [id], map: "Product_productCategoryId_fkey")
   storagelocation   storagelocation   @relation(fields: [storageLocationId], references: [id], map: "Product_storageLocationId_fkey")
@@ -145,6 +146,32 @@ model inbound {
   @@index([supplierId], map: "fk_inbound_supplier")
 }
 
+model outbound {
+  id              Int             @id @default(autoincrement())
+  productId       String
+  qty             Int
+  sellingPrice    Decimal         @db.Decimal(18, 2)
+  operationalCost Decimal         @db.Decimal(18, 2)
+  status          outbound_status @default(SENT)
+  note            String?         @db.VarChar(255)
+  createdBy       String?         @db.VarChar(100)
+  createdAt       DateTime?       @default(now()) @db.DateTime(0)
+  isShipping      Boolean         @default(false)
+  shippingDate    DateTime?       @db.Date
+  courier         String?         @db.VarChar(100)
+  isResi          Boolean?        @default(false)
+  resiImg         String?         @db.VarChar(255)
+  resiUploadDate  DateTime?       @db.DateTime(0)
+  isPickup        Boolean         @default(false)
+  pickupDate      DateTime?       @db.Date
+  updateBy        String?         @db.VarChar(255)
+  updatedAt       DateTime?       @db.Timestamp(0)
+  pickupBy        String?         @db.VarChar(100)
+  product         product         @relation(fields: [productId], references: [id], map: "fk_product")
+
+  @@index([productId], map: "fk_product")
+}
+
 enum storagelocation_type {
   rack
   shelf
@@ -165,4 +192,13 @@ enum inbound_status {
   CHECKING
   STORED
   CANCELED
+}
+
+enum outbound_status {
+  SENT
+  PROCESSING
+  DELIVERED
+  CANCELED
+  SHIPPED
+  PICKED_UP  @map("PICKED UP")
 }

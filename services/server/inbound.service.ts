@@ -31,4 +31,17 @@ export const inboundService = {
   delete: async (id: string) => {
     return await prisma.inbound.delete({ where: { id } });
   },
+
+  cancel: async (id: string, canceledNote?: string, updatedBy?: string) => {
+    return await prisma.inbound.update({
+      where: { id },
+      data: {
+        status: "CANCELED",
+        canceledDate: new Date(),
+        canceledNote: canceledNote ?? "Canceled via system",
+        updatedBy: updatedBy ?? "administrator",
+      },
+      include: { product: true, supplier: true },
+    });
+  },
 };
