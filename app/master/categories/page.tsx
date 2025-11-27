@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, Edit2, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, SquarePen, Trash2 } from "lucide-react";
 import { categoryService } from "@/services/category.service";
 import { Category } from "@/types/category";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 
 export default function CategoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -76,7 +77,10 @@ export default function CategoryPage() {
     <div className="p-6">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Categories</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Categories</h1>
+          <p className="text-sm text-muted-foreground">Manage your product categories catalog here</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <CircleFadingArrowUp /> Import
@@ -107,7 +111,17 @@ export default function CategoryPage() {
           {categories.map((cat: Category) => (
             <TableRow key={cat.id}>
               <TableCell>{cat.name}</TableCell>
-              <TableCell>{cat.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+              <TableCell>
+                {cat.isActive ? (
+                  <Badge>
+                    <IconCircleCheckFilled /> Active
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">
+                    <IconCircleXFilled /> Inactive
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell>{cat.createdBy}</TableCell>
               <TableCell>{formatDate(cat.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
@@ -122,7 +136,7 @@ export default function CategoryPage() {
                     setDialogOpen(true);
                   }}
                 >
-                  <Edit2 />
+                  <SquarePen />
                 </Button>
                 <Button size="icon-sm" variant="destructive" onClick={() => deleteMutation.mutate(cat.id)}>
                   <Trash2 />

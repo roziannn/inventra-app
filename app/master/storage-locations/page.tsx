@@ -13,6 +13,7 @@ import { StorageLocation } from "@/types/storage-locations";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 
 export default function StorageLocationPage() {
   const [page, setPage] = useState(1);
@@ -100,7 +101,10 @@ export default function StorageLocationPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Storage Locations</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Storage Locations</h1>
+          <p className="text-sm text-muted-foreground">Manage your product storage catalog here</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <CircleFadingArrowUp /> Import
@@ -143,7 +147,17 @@ export default function StorageLocationPage() {
                 <TableCell>{loc.name}</TableCell>
                 <TableCell>{loc.type}</TableCell>
                 <TableCell>{loc.zone || "-"}</TableCell>
-                <TableCell>{loc.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+                <TableCell>
+                  {loc.isActive ? (
+                    <Badge>
+                      <IconCircleCheckFilled /> Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">
+                      <IconCircleXFilled /> Inactive
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell>{loc.maxCapacity}</TableCell>
                 <TableCell>{loc.capacityUnit}</TableCell>
                 <TableCell>{formatDate(loc.createdAt)}</TableCell>
@@ -183,7 +197,7 @@ export default function StorageLocationPage() {
 
       {/* PAGINATION */}
       <div className="flex justify-between items-center mt-4">
-        {/* <div className="text-sm text-gray-600">{`Showing ${categories.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + categories.length} of ${data?.pagination?.totalItems ?? 0} entries`}</div> */}
+        <div className="text-sm text-gray-600">{`Showing ${locations.length > 0 ? (page - 1) * limit + 1 : 0} to ${(page - 1) * limit + locations.length} of ${data?.pagination?.totalItems ?? 0} entries`}</div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
             <ChevronLeft />

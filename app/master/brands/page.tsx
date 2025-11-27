@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, Edit2, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, SquarePen, Trash2 } from "lucide-react";
 import { brandService } from "@/services/brand.service";
 import { Brand } from "@/types/brand";
 import { formatDate } from "@/helper/formatDate";
@@ -79,7 +79,10 @@ export default function BrandPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Brands</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Brands</h1>
+          <p className="text-sm text-muted-foreground">Manage your product brand catalog here</p>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -144,7 +147,7 @@ export default function BrandPage() {
                       setDialogOpen(true);
                     }}
                   >
-                    <Edit2 />
+                    <SquarePen />
                   </Button>
                   <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(brand.id)}>
                     <Trash2 />

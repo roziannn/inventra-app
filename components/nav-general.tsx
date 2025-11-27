@@ -25,7 +25,7 @@ export function NavGeneral({ items }: { items: NavItem[] }) {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>General</SidebarGroupLabel>
+      {/* <SidebarGroupLabel>General</SidebarGroupLabel> */}
       <SidebarMenu>
         {items.map((item) => {
           const isActive = pathname === item.url || item.items?.some((child) => pathname === child.url);

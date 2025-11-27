@@ -79,10 +79,12 @@ export default function ManageStoragePage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">Manage Storage</h1>
-
+      <div>
+        <h1 className="text-xl font-bold">Manage Storage</h1>
+        <p className="text-sm text-muted-foreground">Manage your product storage zone catalog here</p>
+      </div>
       {/* Zone Selector */}
-      <div className="mb-6 max-w-sm">
+      <div className="my-6 max-w-sm">
         <Select onValueChange={setSelectedZone}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select Zone..." />
@@ -106,7 +108,7 @@ export default function ManageStoragePage() {
               const usedPercent = Math.round((loc.usedCapacity / loc.maxCapacity) * 100);
 
               return (
-                <div key={loc.id} className="border p-3 flex flex-col justify-between items-center shadow-sm">
+                <div key={loc.id} className="border p-3 flex flex-col justify-between items-center shadow-sm rounded-md">
                   <div className="w-full flex justify-between items-center mb-2">
                     <span className="font-semibold">{loc.locationCode}</span>
                     <Badge variant={usedPercent < 50 ? "success" : usedPercent < 80 ? "warning" : "destructive"}>{usedPercent}%</Badge>

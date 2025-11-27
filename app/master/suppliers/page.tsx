@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, Edit2, ImportIcon, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleFadingArrowUp, CirclePlus, SquarePen, Trash2 } from "lucide-react";
 import { supplierService } from "@/services/supplier.service";
 import { Supplier } from "@/types/supplier";
 import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 
 export default function SupplierPage() {
   const [page, setPage] = useState(1);
@@ -79,7 +80,10 @@ export default function SupplierPage() {
     <div className="p-6">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Suppliers</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Suppliers</h1>
+          <p className="text-sm text-muted-foreground">Manage your product supplier catalog here</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
             <CircleFadingArrowUp /> Import
@@ -110,7 +114,17 @@ export default function SupplierPage() {
           {suppliers.map((sup: Supplier) => (
             <TableRow key={sup.id}>
               <TableCell>{sup.name}</TableCell>
-              <TableCell>{sup.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
+              <TableCell>
+                {sup.isActive ? (
+                  <Badge>
+                    <IconCircleCheckFilled /> Active
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">
+                    <IconCircleXFilled /> Inactive
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell>{sup.createdBy}</TableCell>
               <TableCell>{formatDate(sup.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
@@ -125,7 +139,7 @@ export default function SupplierPage() {
                     setDialogOpen(true);
                   }}
                 >
-                  <Edit2 />
+                  <SquarePen />
                 </Button>
                 <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(sup.id)}>
                   <Trash2 />

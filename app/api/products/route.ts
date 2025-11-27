@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// GET /api/products?page=1&limit=10&id=...&code=...
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
-  const skip = (page - 1) * limit;
-
-  const id = searchParams.get("id");
+  const type = searchParams.get("type"); // cek LOV
+  const id = searchParams.get("id"); // cek single product
 
   try {
-    // Jika id atau code dikirim, ambil single product
+    // ====== GET LOV ======
+    if (type === "lov") {
+      const products = await prisma.product.findMany({
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: "asc" },
+      });
+
+      return NextResponse.json(products);
+    }
+
+    // ====== GET SINGLE ======
     if (id) {
       const product = await prisma.product.findUnique({
         where: { id },
@@ -29,6 +38,11 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json(product);
     }
+
+    // ====== GET PAGINATED LIST ======
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
       prisma.product.findMany({

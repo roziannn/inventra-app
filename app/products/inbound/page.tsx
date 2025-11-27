@@ -11,6 +11,10 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from "@/helper/formatDate";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+import { supplierService } from "@/services/supplier.service";
+import { productService } from "@/services/product.service";
+import { inputCurrency } from "@/helper/inputCurrency";
 
 type TrackingStatus = {
   checked: boolean;
@@ -18,6 +22,16 @@ type TrackingStatus = {
 };
 
 export default function InboundPage() {
+  const { data: suppliers = [], isLoading: loadingSuppliers } = useQuery({
+    queryKey: ["suppliers-lov"],
+    queryFn: supplierService.getLOV,
+  });
+
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ["products-lov"],
+    queryFn: productService.getLOV,
+  });
+
   const [inboundList, setInboundList] = useState([
     {
       id: 1,
@@ -62,6 +76,7 @@ export default function InboundPage() {
     qty: "",
     supplier: "",
     purchasePrice: "",
+    purchasePriceDisplay: "",
     date: "",
     note: "",
   });
@@ -95,7 +110,8 @@ export default function InboundPage() {
       const newEntry = {
         ...formData,
         id: inboundList.length + 1,
-        status: "Received", // default
+        status: "Received",
+        purchasePrice: parseInt(formData.purchasePrice),
         tracking: {
           Received: { checked: true, date: formData.date || new Date().toLocaleDateString("id-ID") },
           "Item Checking": { checked: false, date: null },
@@ -165,8 +181,11 @@ export default function InboundPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Inbound</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-xl font-bold">Inbound</h1>
+          <p className="text-sm text-muted-foreground">Manage your inboud product data here</p>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2" onClick={() => setEditingItemId(null)}>
@@ -181,20 +200,60 @@ export default function InboundPage() {
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 mt-2">
               <div className="col-span-2">
                 <Label>Product Name</Label>
-                <Input required value={formData.product} onChange={(e) => setFormData({ ...formData, product: e.target.value })} />
+                <Select value={formData.product} onValueChange={(value) => setFormData({ ...formData, product: value })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingProducts ? "Loading..." : "-- Select product --"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.name}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="col-span-2">
                 <Label>Supplier</Label>
-                <Input required value={formData.supplier} onChange={(e) => setFormData({ ...formData, supplier: e.target.value })} />
+                <Select value={formData.supplier} onValueChange={(value) => setFormData({ ...formData, supplier: value })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingSuppliers ? "Loading..." : "-- Select supplier --"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.name}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
                 <Label>Quantity</Label>
                 <Input type="number" required value={formData.qty} onChange={(e) => setFormData({ ...formData, qty: e.target.value })} />
               </div>
               <div>
-                <Label>Purchase Price (Rp)</Label>
-                <Input type="number" required value={formData.purchasePrice} onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })} />
+                <Label>Purchase Price</Label>
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <span className="bg-gray-100 px-2 py-2 text-sm text-gray-700 border-r">Rp</span>
+                  <Input
+                    type="text"
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5"
+                    required
+                    value={formData.purchasePriceDisplay || ""}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/[^\d]/g, "");
+                      setFormData({
+                        ...formData,
+                        purchasePrice: rawValue,
+                        purchasePriceDisplay: inputCurrency(e.target.value),
+                      });
+                    }}
+                  />
+                </div>
               </div>
+
               <div className="col-span-2">
                 <Label>Receive Date</Label>
                 <Input type="date" required value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
@@ -244,7 +303,7 @@ export default function InboundPage() {
             <TableRow key={item.id}>
               <TableCell>{item.product}</TableCell>
               <TableCell>{item.qty}</TableCell>
-              <TableCell>{item.supplier}</TableCell>
+              <TableCell>{suppliers.find((s) => s.id.toString() === item.supplier)?.name || item.supplier}</TableCell>
               <TableCell>Rp {Number(item.purchasePrice).toLocaleString("id-ID")}</TableCell>
               <TableCell>{formatDate(item.date)}</TableCell>
               <TableCell>{item.status}</TableCell>

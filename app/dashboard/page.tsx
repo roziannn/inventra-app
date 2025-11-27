@@ -23,13 +23,11 @@ const stockTrendData = [
 export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Warehouse overview, stock activities, and notifications</p>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4 grid-cols-2">
         <Card className="py-4 shadow border-none">
           <CardContent className="flex items-center space-x-4 pt-1">
@@ -39,6 +37,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Total Products</p>
               <h2 className="text-xl font-bold">1,240</h2>
+              <p className="text-xs text-green-600">+12 today</p>
             </div>
           </CardContent>
         </Card>
@@ -51,6 +50,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Inbound</p>
               <h2 className="text-xl font-bold">320</h2>
+              <p className="text-xs text-green-600">+25 today</p>
             </div>
           </CardContent>
         </Card>
@@ -63,6 +63,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Outbound</p>
               <h2 className="text-xl font-bold">280</h2>
+              <p className="text-xs text-red-600">+18 today</p>
             </div>
           </CardContent>
         </Card>
@@ -75,6 +76,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Low Stock Alert</p>
               <h2 className="text-xl font-bold">12</h2>
+              <p className="text-xs text-yellow-600">View item</p>
             </div>
           </CardContent>
         </Card>
@@ -93,8 +95,8 @@ export default function DashboardPage() {
                 <XAxis dataKey="name" fontSize={14} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="inbound" fill="#60a5fa" />
-                <Bar dataKey="outbound" fill="#f87171" />
+                <Bar dataKey="inbound" fill="#3b82f6" />
+                <Bar dataKey="outbound" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

@@ -11,8 +11,16 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from "@/helper/formatDate";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+import { productService } from "@/services/product.service";
+import { inputCurrency } from "@/helper/inputCurrency";
 
 export default function OutboundPage() {
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ["products-lov"],
+    queryFn: productService.getLOV,
+  });
+
   const [outboundList, setOutboundList] = useState([
     {
       id: 1,
@@ -53,7 +61,9 @@ export default function OutboundPage() {
     qty: "",
     supplier: "",
     sellingPrice: "",
+    sellingPriceDisplay: "",
     operationalCost: "",
+    operationalCostDisplay: "",
     date: "",
     status: "Sent",
     note: "",
@@ -73,10 +83,12 @@ export default function OutboundPage() {
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
+    const entryWithStatus = { ...formData, status: "Sent" };
+
     if (editingItemId) {
-      setOutboundList((prev) => prev.map((item) => (item.id === editingItemId ? { ...item, ...formData } : item)));
+      setOutboundList((prev) => prev.map((item) => (item.id === editingItemId ? { ...item, ...entryWithStatus } : item)));
     } else {
-      const newEntry = { ...formData, id: outboundList.length + 1 };
+      const newEntry = { ...entryWithStatus, id: outboundList.length + 1 };
       setOutboundList([newEntry, ...outboundList]);
     }
 
@@ -87,7 +99,6 @@ export default function OutboundPage() {
       sellingPrice: "",
       operationalCost: "",
       date: "",
-      status: "Sent",
       note: "",
       shippingRequired: false,
       shippingDate: "",
@@ -128,8 +139,11 @@ export default function OutboundPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Outbound</h1>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-xl font-bold">Outbound</h1>
+          <p className="text-sm text-muted-foreground">Manage your outbound catalog here</p>
+        </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -147,7 +161,18 @@ export default function OutboundPage() {
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 mt-2">
               <div className="col-span-2">
                 <Label>Product Name</Label>
-                <Input required value={formData.product} onChange={(e) => setFormData({ ...formData, product: e.target.value })} />
+                <Select value={formData.product} onValueChange={(value) => setFormData({ ...formData, product: value })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={loadingProducts ? "Loading..." : "-- Select product --"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.name}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -161,33 +186,49 @@ export default function OutboundPage() {
               </div>
 
               <div>
-                <Label>Selling Price (Rp)</Label>
-                <Input type="number" required value={formData.sellingPrice} onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })} />
+                <Label>Selling Price</Label>
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <span className="bg-gray-100 px-2 py-2 text-sm text-gray-700 border-r">Rp</span>
+                  <Input
+                    type="text"
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5"
+                    required
+                    value={formData.sellingPriceDisplay || ""}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/[^\d]/g, "");
+                      setFormData({
+                        ...formData,
+                        sellingPrice: rawValue,
+                        sellingPriceDisplay: inputCurrency(e.target.value),
+                      });
+                    }}
+                  />
+                </div>
               </div>
 
               <div>
-                <Label>Operational Cost (Rp)</Label>
-                <Input type="number" value={formData.operationalCost} onChange={(e) => setFormData({ ...formData, operationalCost: e.target.value })} />
+                <Label>Operational Cost</Label>
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <span className="bg-gray-100 px-2 py-2 text-sm text-gray-700 border-r">Rp</span>
+                  <Input
+                    type="text"
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5"
+                    value={formData.operationalCostDisplay || ""}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/[^\d]/g, "");
+                      setFormData({
+                        ...formData,
+                        operationalCost: rawValue,
+                        operationalCostDisplay: inputCurrency(e.target.value),
+                      });
+                    }}
+                  />
+                </div>
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <Label>Date</Label>
                 <Input type="date" required value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
-              </div>
-
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sent">Sent</SelectItem>
-                    <SelectItem value="In Transit">In Transit</SelectItem>
-                    <SelectItem value="Delivered">Delivered</SelectItem>
-                    <SelectItem value="Canceled">Canceled</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="col-span-2">

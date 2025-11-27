@@ -23,8 +23,13 @@ export default function StockAdjustmentListPage() {
   const totalPages = data?.pagination.totalPages ?? 1;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-6">Stock Adjustment</h1>
+    <div className="p-6 space-y-4">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-xl font-bold">Stock Adjusment</h1>
+          <p className="text-sm text-muted-foreground">Manage your stock product here</p>
+        </div>
+      </div>
 
       {isError && <p className="text-red-500">Failed to load products</p>}
       {isLoading ? (

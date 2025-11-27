@@ -19,12 +19,12 @@ import { storageLocationService } from "@/services/storage-locations.service";
 import { supplierService } from "@/services/supplier.service";
 import { categoryService } from "@/services/category.service";
 import { formatCurrency } from "@/helper/formatCurrency";
+import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 
 export default function ProductPage() {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState<Partial<Product>>({
-    // code: "",
     name: "",
     price: 0,
     stock: 0,
@@ -183,7 +183,10 @@ export default function ProductPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Products</h1>
+        <div>
+          <h1 className="text-xl font-bold">Products</h1>
+          <p className="text-sm text-muted-foreground">Manage your product catalog here</p>
+        </div>
         <Button
           onClick={() => {
             setDialogMode("add");
@@ -202,7 +205,6 @@ export default function ProductPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              {/* <TableHead>Code</TableHead> */}
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -216,17 +218,24 @@ export default function ProductPage() {
           <TableBody>
             {products.map((prod: Product) => (
               <TableRow key={prod.id}>
-                {/* <TableCell>{prod.code}</TableCell> */}
                 <TableCell>{prod.name}</TableCell>
                 <TableCell>{formatCurrency(prod.price)}</TableCell>
                 <TableCell>{prod.stock}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{prod.category?.name}</Badge>
                 </TableCell>
-                {/* <TableCell>{prod.unit}</TableCell> */}
                 <TableCell>{prod.storagelocation?.name}</TableCell>
-                <TableCell>{prod.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>}</TableCell>
-
+                <TableCell>
+                  {prod.isActive ? (
+                    <Badge>
+                      <IconCircleCheckFilled /> Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">
+                      <IconCircleXFilled /> Inactive
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell>{formatDate(prod.restockDate)}</TableCell>
                 <TableCell className="text-center">
                   <DropdownMenu>
@@ -364,7 +373,6 @@ export default function ProductPage() {
             </div>
 
             {/* Storage Location */}
-
             <div>
               <Label>Storage Location</Label>
               <Select value={formData.storageLocationId} onValueChange={(value) => setFormData({ ...formData, storageLocationId: value })}>

@@ -48,4 +48,11 @@ export const productService = {
     const res = await fetch(`${BASE_URL}?id=${id}`, { method: "DELETE" });
     return res.json();
   },
+
+  // GET LOV
+  getLOV: async (): Promise<Product[]> => {
+    const res = await fetch(`${BASE_URL}?type=lov`);
+    if (!res.ok) throw new Error("Failed to fetch products");
+    return res.json();
+  },
 };
