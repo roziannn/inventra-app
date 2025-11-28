@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -38,7 +38,7 @@ export default function OutboundPage() {
   // Form state
   const [formData, setFormData] = useState<CreateOutboundDto>({
     product: "",
-    qty: null,
+    qty: 0,
     sellingPrice: 0,
     operationalCost: 0,
     status: "SENT",
@@ -138,9 +138,6 @@ export default function OutboundPage() {
     { title: "Total Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary h-5 w-5" /> },
   ];
 
-  const selectedProduct = products.find((p) => p.id === formData.product);
-  const valuePrice = (selectedProduct?.price || 0) * formData.qty;
-
   return (
     <div className="p-6 space-y-4">
       {/* Header & Add Button */}
@@ -184,49 +181,30 @@ export default function OutboundPage() {
               {/* Quantity */}
               <div>
                 <Label>Quantity</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  required
-                  value={formData.qty ?? ""}
-                  onChange={(e) => {
-                    const qty = e.target.value === "" ? null : Number(e.target.value);
-                    setFormData((prev) => ({
-                      ...prev,
-                      qty,
-                      totalCost: (products.find((p) => p.id === prev.product)?.price || 0) * (qty || 0) + (prev.operationalCost || 0),
-                    }));
-                  }}
-                />
+                <Input type="number" required value={formData.qty} onChange={(e) => setFormData({ ...formData, qty: Number(e.target.value) })} />
               </div>
 
-              {/* Value Price (readonly, auto-calculated) */}
-
+              {/* Buyer / Pickup By */}
               <div>
-                <Label>
-                  Value <span className="text-xs text-zinc-600">(Qty x Item Price)</span>
-                </Label>
-                <div className="flex items-center border rounded-md overflow-hidden bg-gray-100">
+                <Label>Buyer / Pickup By</Label>
+                <Input required value={formData.pickupBy || ""} onChange={(e) => setFormData({ ...formData, pickupBy: e.target.value })} />
+              </div>
+
+              {/* Selling Price */}
+              <div>
+                <Label>Selling Price</Label>
+                <div className="flex items-center border rounded-md overflow-hidden">
                   <span className="bg-gray-100 px-2 py-2 text-sm text-gray-700 border-r">Rp</span>
-                  <Input type="text" value={inputCurrency(valuePrice.toString())} readOnly className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5 bg-gray-100" />
+                  <Input
+                    type="text"
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-1.5"
+                    value={inputCurrency(formData.sellingPrice.toString())}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/[^\d]/g, "");
+                      setFormData({ ...formData, sellingPrice: Number(rawValue) });
+                    }}
+                  />
                 </div>
-              </div>
-
-              {/* Reason */}
-              <div>
-                <Label>Reason</Label>
-                <Select value={formData.reason || ""} onValueChange={(value) => setFormData({ ...formData, reason: value as "SALES" | "RETURN" | "WASTE" | "INTERNAL_USE" })}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="-- Select Reason --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["SALES", "RETURN", "WASTE", "INTERNAL_USE"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r.replace("_", " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Operational Cost */}
@@ -253,101 +231,36 @@ export default function OutboundPage() {
               </div>
 
               {/* Shipping Checkbox */}
-              <div className="col-span-2 flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={formData.isShipping}
-                    onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
-                        isShipping: !!checked,
-                        isResi: !!checked,
-                        isPickup: checked ? false : formData.isPickup,
-                      })
-                    }
-                  />
-                  <Label className="mt-2">Shipping Required?</Label>
-                </div>
-
-                {/* Shipping Fields */}
-                {formData.isShipping && (
-                  <div className="flex flex-col gap-4 mt-1">
-                    <div>
-                      <Label>Shipping Date</Label>
-                      <Input type="date" value={formData.shippingDate || ""} onChange={(e) => setFormData({ ...formData, shippingDate: e.target.value })} />
-                    </div>
-
-                    <div>
-                      <Label>Courier</Label>
-                      <Select value={formData.courier || ""} onValueChange={(value) => setFormData({ ...formData, courier: value })}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select Courier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["JNE", "J&T", "SiCepat", "Pos Indonesia", "Wahana"].map((c) => (
-                            <SelectItem key={c} value={c}>
-                              {c}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Resi Image</Label>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setFormData({
-                              ...formData,
-                              resiImg: URL.createObjectURL(file),
-                              resiUploadDate: new Date(),
-                            });
-                          }
-                        }}
-                      />
-                      {formData.resiImg && <img src={formData.resiImg} alt="Resi Preview" className="mt-2 w-32 h-32 object-cover border" />}
-                    </div>
-                  </div>
-                )}
+              <div className="col-span-2 flex items-center gap-2">
+                <Checkbox checked={formData.isShipping} onCheckedChange={(checked) => setFormData({ ...formData, isShipping: !!checked, isPickup: !checked })} />
+                <Label>Shipping Required?</Label>
               </div>
 
-              {/* Pickup Checkbox */}
-              <div className="col-span-2 flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={formData.isPickup}
-                    onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
-                        isPickup: !!checked,
-                        isShipping: checked ? false : formData.isShipping,
-                      })
-                    }
-                  />
-                  <Label className="mt-2">Pickup Required?</Label>
-                </div>
-
-                {/* Pickup Fields */}
-                {formData.isPickup && (
-                  <div className="flex flex-col gap-4 mt-1">
-                    <div>
-                      <Label>Pickup By</Label>
-                      <Input type="text" value={formData.pickupBy || ""} onChange={(e) => setFormData({ ...formData, pickupBy: e.target.value })} />
-                    </div>
-
-                    <div>
-                      <Label>Pickup Date</Label>
-                      <Input type="date" value={formData.pickupDate || ""} onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })} />
-                    </div>
+              {/* Shipping Fields */}
+              {formData.isShipping && (
+                <>
+                  <div>
+                    <Label>Shipping Date</Label>
+                    <Input type="date" value={formData.shippingDate || ""} onChange={(e) => setFormData({ ...formData, shippingDate: e.target.value })} />
                   </div>
-                )}
-              </div>
+                  <div>
+                    <Label>Courier</Label>
+                    <Select value={formData.courier || ""} onValueChange={(value) => setFormData({ ...formData, courier: value })}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Courier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["JNE", "J&T", "SiCepat", "Pos Indonesia", "Wahana"].map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
-              {/* Submit Button */}
               <div className="col-span-2 flex justify-end mt-4">
                 <Button type="submit" className="flex items-center gap-2">
                   <Save className="h-4 w-4" /> Save

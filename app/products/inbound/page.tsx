@@ -331,8 +331,8 @@ export default function InboundPage() {
                 </div>
                 <Button
                   size="sm"
-                  variant={!!trackingItem.receiveDate ? "destructive" : "default"}
-                  className="whitespace-nowrap"
+                  variant={!!trackingItem.receiveDate ? "secondary" : "default"}
+                  className="whitespace-nowrap text-xs"
                   onClick={() =>
                     updateTracking.mutate({
                       receiveDate: new Date(),
@@ -341,7 +341,7 @@ export default function InboundPage() {
                   }
                   disabled={!!trackingItem.receiveDate}
                 >
-                  {trackingItem.receiveDate ? "Received" : "Mark as Received"}
+                  {trackingItem.receiveDate ? "Completed" : "Mark as Received"}
                 </Button>
               </div>
 
@@ -358,8 +358,8 @@ export default function InboundPage() {
                 </div>
                 <Button
                   size="sm"
-                  variant={!!trackingItem.itemCheckingDate ? "destructive" : "default"}
-                  className="whitespace-nowrap"
+                  variant={!!trackingItem.itemCheckingDate ? "secondary" : "default"}
+                  className="whitespace-nowrap text-xs"
                   onClick={() =>
                     updateTracking.mutate({
                       itemCheckingDate: new Date(),
@@ -368,7 +368,7 @@ export default function InboundPage() {
                   }
                   disabled={!!trackingItem.itemCheckingDate}
                 >
-                  {trackingItem.itemCheckingDate ? "Checked" : "Mark as Checking"}
+                  {trackingItem.itemCheckingDate ? "Completed" : "Mark as Checking"}
                 </Button>
               </div>
 
@@ -385,8 +385,8 @@ export default function InboundPage() {
                 </div>
                 <Button
                   size="sm"
-                  variant={!!trackingItem.storedDate ? "destructive" : "default"}
-                  className="whitespace-nowrap"
+                  variant={!!trackingItem.storedDate ? "secondary" : "default"}
+                  className="whitespace-nowrap text-xs"
                   onClick={() =>
                     updateTracking.mutate({
                       storedDate: new Date(),
@@ -395,7 +395,7 @@ export default function InboundPage() {
                   }
                   disabled={!!trackingItem.storedDate}
                 >
-                  {trackingItem.storedDate ? "Stored" : "Mark as Stored"}
+                  {trackingItem.storedDate ? "Completed" : "Mark as Stored"}
                 </Button>
               </div>
             </div>

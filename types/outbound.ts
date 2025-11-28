@@ -17,7 +17,7 @@ export interface PickupInfo {
 
 export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
   product: string;
-  qty: number;
+  qty?: number | null;
   sellingPrice: number;
   operationalCost: number;
   status?: OutboundStatus;

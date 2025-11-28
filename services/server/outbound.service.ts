@@ -15,7 +15,7 @@ export const outboundService = {
     return await prisma.outbound.create({
       data: {
         productId: payload.product,
-        qty: payload.qty,
+        qty: payload.qty ?? 0,
         sellingPrice: payload.sellingPrice,
         operationalCost: payload.operationalCost,
         status,
