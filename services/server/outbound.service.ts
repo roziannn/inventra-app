@@ -14,11 +14,14 @@ export const outboundService = {
 
     return await prisma.outbound.create({
       data: {
-        productId: payload.product,
+        product: {
+          connect: { id: payload.productId },
+        },
         qty: payload.qty ?? 0,
-        sellingPrice: payload.sellingPrice,
+        totalValue: payload.totalValue ?? 0,
         operationalCost: payload.operationalCost,
         status,
+        reason: payload.reason,
         note: payload.note,
         createdBy: payload.createdBy ?? "administrator",
 

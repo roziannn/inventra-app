@@ -1,4 +1,5 @@
-export type OutboundStatus = "SENT" | "PROCESSING" | "DELIVERED" | "CANCELED" | "SHIPPED" | "PICKED_UP"; //
+export type OutboundStatus = "SENT" | "PROCESSING" | "DELIVERED" | "CANCELED" | "SHIPPED" | "PICKED_UP";
+export type OutboundReason = "SALES" | "RETURN" | "WASTE" | "INTERNAL_USE";
 
 export interface ShippingInfo {
   isShipping: boolean;
@@ -6,7 +7,7 @@ export interface ShippingInfo {
   courier?: string;
   isResi?: boolean;
   resiImg?: string;
-  resiUploadDate?: string;
+  resiUploadDate?: Date;
 }
 
 export interface PickupInfo {
@@ -17,8 +18,10 @@ export interface PickupInfo {
 
 export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
   product: string;
+  productId: string; // ganti dari product
+  reason: OutboundReason;
   qty?: number | null;
-  sellingPrice: number;
+  totalValue?: number; // ditambahkan
   operationalCost: number;
   status?: OutboundStatus;
   note?: string;
@@ -26,6 +29,7 @@ export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
 }
 
 export interface Outbound extends CreateOutboundDto {
+  // product: Product;
   id: number;
   createdAt: string;
 }

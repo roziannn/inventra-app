@@ -150,9 +150,10 @@ model outbound {
   id              Int             @id @default(autoincrement())
   productId       String
   qty             Int
-  sellingPrice    Decimal         @db.Decimal(18, 2)
+  totalValue      Decimal         @db.Decimal(18, 2)
   operationalCost Decimal         @db.Decimal(18, 2)
   status          outbound_status @default(SENT)
+  reason          outbound_reason
   note            String?         @db.VarChar(255)
   createdBy       String?         @db.VarChar(100)
   createdAt       DateTime?       @default(now()) @db.DateTime(0)
@@ -164,9 +165,9 @@ model outbound {
   resiUploadDate  DateTime?       @db.DateTime(0)
   isPickup        Boolean         @default(false)
   pickupDate      DateTime?       @db.Date
+  pickupBy        String?         @db.VarChar(255)
   updateBy        String?         @db.VarChar(255)
   updatedAt       DateTime?       @db.Timestamp(0)
-  pickupBy        String?         @db.VarChar(100)
   product         product         @relation(fields: [productId], references: [id], map: "fk_product")
 
   @@index([productId], map: "fk_product")
@@ -194,11 +195,18 @@ enum inbound_status {
   CANCELED
 }
 
+enum outbound_reason {
+  SALES
+  RETURN
+  WASTE
+  INTERNAL_USE
+}
+
 enum outbound_status {
   SENT
   PROCESSING
   DELIVERED
   CANCELED
   SHIPPED
-  PICKED_UP  @map("PICKED UP")
+  PICKED_UP
 }

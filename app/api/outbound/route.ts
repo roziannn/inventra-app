@@ -6,40 +6,14 @@ export async function GET() {
   try {
     const data = await outboundService.getAll();
 
-    // const mapped = data.map((d) => ({
-    //   id: d.id,
-    //   product: d.product?.name ?? "",
-    //   pickupBy: d.pickupBy,
-    //   qty: d.qty,
-    //   sellingPrice: Number(d.sellingPrice),
-    //   operationalCost: Number(d.operationalCost),
-    //   total: Number(d.sellingPrice) + Number(d.operationalCost),
-    //   date: d.createdAt ?? "",
-    //   status: d.status ?? "",
-    //   note: d.note ?? "",
-    //   shippingInfo: {
-    //     isShipping: d.isShipping,
-    //     shippingDate: d.shippingDate ?? null,
-    //     courier: d.courier ?? "",
-    //     isResi: d.isResi ?? false,
-    //     resiImg: d.resiImg ?? "",
-    //     resiUploadDate: d.resiUploadDate ?? null,
-    //   },
-    //   pickupInfo: {
-    //     isPickup: d.isPickup,
-    //     pickupDate: d.pickupDate ?? null,
-    //     pickupBy: d.pickupBy ?? "",
-    //   },
-    // }));
-
     const mapped = data.map((d) => ({
       id: d.id,
-      product: d.product?.name ?? "",
+      product: d.product.name,
       pickupBy: d.pickupBy,
       qty: d.qty,
-      sellingPrice: Number(d.sellingPrice),
       operationalCost: Number(d.operationalCost),
-      total: Number(d.sellingPrice) + Number(d.operationalCost),
+      total: Number(d.qty) + Number(d.operationalCost),
+      reason: d.reason,
       date: d.createdAt ?? "",
       status: d.status ?? "",
       note: d.note ?? "",
@@ -50,7 +24,6 @@ export async function GET() {
       resiImg: d.resiImg ?? "",
       resiUploadDate: d.resiUploadDate ?? null,
       pickupDate: d.pickupDate ?? null,
-      //   pickupBy: d.pickupBy ?? "",
     }));
 
     return NextResponse.json({ success: true, data: mapped }, { status: 200 });

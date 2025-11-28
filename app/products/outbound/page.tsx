@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { PlusCircle, Save, Package, Truck, CheckCircle2, Wallet, CircleArrowDown, FileText, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlusCircle, Save, Package, Truck, CheckCircle2, Wallet, CircleArrowDown, MoreHorizontal, ChevronLeft, ChevronRight, MapPinCheck, Edit3, CircleX } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,32 +16,35 @@ import { inputCurrency } from "@/helper/inputCurrency";
 import { productService } from "@/services/product.service";
 import { outboundClient } from "@/services/client/outbound.client";
 import { CreateOutboundDto } from "@/types/outbound";
+import { formatCurrency } from "@/helper/formatCurrency";
+import Image from "next/image";
 
 export default function OutboundPage() {
   const queryClient = useQueryClient();
 
-  // Product LOV
+  // product LOV
   const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["products-lov"],
     queryFn: productService.getLOV,
   });
 
-  // Get all outbound
+  // get all
   const { data: outboundList = [], isLoading } = useQuery({
     queryKey: ["outbounds"],
     queryFn: outboundClient.getAll,
   });
 
-  // Dialog state
   const [open, setOpen] = useState(false);
 
-  // Form state
+  // form state
   const [formData, setFormData] = useState<CreateOutboundDto>({
     product: "",
+    productId: "",
     qty: null,
-    sellingPrice: 0,
     operationalCost: 0,
+    totalValue: 0,
     status: "SENT",
+    reason: "SALES",
     note: "",
     createdBy: "administrator",
     isShipping: false,
@@ -72,14 +75,16 @@ export default function OutboundPage() {
     },
   });
 
-  // Reset form
+  // reset form
   const resetForm = () => {
     setFormData({
       product: "",
+      productId: "",
       qty: 0,
-      sellingPrice: 0,
       operationalCost: 0,
+      totalValue: 0,
       status: "SENT",
+      reason: "SALES",
       note: "",
       createdBy: "administrator",
       isShipping: false,
@@ -94,33 +99,31 @@ export default function OutboundPage() {
     });
   };
 
-  // Handle submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.productId) {
+      alert("Product is required");
+      return;
+    }
+
+    const totalValue = (formData.qty || 0) * (products.find((p) => p.id === formData.productId)?.price || 0) + formData.operationalCost;
+
     const payload: CreateOutboundDto = {
-      product: formData.product,
-      qty: Number(formData.qty),
-      sellingPrice: Number(formData.sellingPrice),
+      ...formData,
+      qty: Number(formData.qty) || null,
+      totalValue,
       operationalCost: Number(formData.operationalCost),
       status: "SENT",
-      note: formData.note || undefined,
-      createdBy: formData.createdBy,
-      isShipping: formData.isShipping,
-      shippingDate: formData.shippingDate || undefined,
-      courier: formData.courier || undefined,
+      reason: formData.reason,
       isResi: !!formData.resiImg,
-      resiImg: formData.resiImg || undefined,
-      resiUploadDate: undefined,
-      isPickup: formData.isPickup,
-      pickupDate: formData.pickupDate || undefined,
-      pickupBy: formData.pickupBy || undefined,
+      resiUploadDate: formData.resiImg ? new Date() : undefined,
     };
 
     createMutation.mutate(payload);
   };
 
-  // Cards
+  // cards
   const statusCounts = outboundList.reduce((acc, curr) => {
     const statusKey = curr.status as string;
     acc[statusKey] = (acc[statusKey] || 0) + 1;
@@ -128,7 +131,7 @@ export default function OutboundPage() {
   }, {} as Record<string, number>);
 
   const totalOperationalCost = outboundList.reduce((acc, item) => acc + Number(item.operationalCost || 0), 0);
-  const totalValue = outboundList.reduce((acc, item) => acc + Number(item.sellingPrice || 0) + Number(item.operationalCost || 0), 0);
+  const totalValue = outboundList.reduce((acc, item) => acc + Number(item.qty || 0) + Number(item.operationalCost || 0), 0);
 
   const cards = [
     { title: "Total Outbound", value: outboundList.length, icon: <Package className="h-5 w-5" /> },
@@ -138,12 +141,11 @@ export default function OutboundPage() {
     { title: "Total Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary h-5 w-5" /> },
   ];
 
-  const selectedProduct = products.find((p) => p.id === formData.product);
-  const valuePrice = (selectedProduct?.price || 0) * formData.qty;
+  const selectedProduct = products.find((p) => p.id === formData.productId);
+  const valuePrice = (selectedProduct?.price || 0) * (formData.qty || 0);
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header & Add Button */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-xl font-bold">Outbound</h1>
@@ -167,7 +169,7 @@ export default function OutboundPage() {
               {/* Product */}
               <div className="col-span-2">
                 <Label>Product Name</Label>
-                <Select value={formData.product} onValueChange={(value) => setFormData({ ...formData, product: value })}>
+                <Select value={formData.productId} onValueChange={(value) => setFormData({ ...formData, productId: value })}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={loadingProducts ? "Loading..." : "-- Select product --"} />
                   </SelectTrigger>
@@ -181,7 +183,7 @@ export default function OutboundPage() {
                 </Select>
               </div>
 
-              {/* Quantity */}
+              {/* quantity */}
               <div>
                 <Label>Quantity</Label>
                 <Input
@@ -194,14 +196,13 @@ export default function OutboundPage() {
                     setFormData((prev) => ({
                       ...prev,
                       qty,
-                      totalCost: (products.find((p) => p.id === prev.product)?.price || 0) * (qty || 0) + (prev.operationalCost || 0),
+                      totalCost: (products.find((p) => p.id === prev.productId)?.price || 0) * (qty || 0) + (prev.operationalCost || 0),
                     }));
                   }}
                 />
               </div>
 
-              {/* Value Price (readonly, auto-calculated) */}
-
+              {/* value price (readonly, auto-calculated) */}
               <div>
                 <Label>
                   Value <span className="text-xs text-zinc-600">(Qty x Item Price)</span>
@@ -272,27 +273,31 @@ export default function OutboundPage() {
                 {/* Shipping Fields */}
                 {formData.isShipping && (
                   <div className="flex flex-col gap-4 mt-1">
-                    <div>
-                      <Label>Shipping Date</Label>
-                      <Input type="date" value={formData.shippingDate || ""} onChange={(e) => setFormData({ ...formData, shippingDate: e.target.value })} />
+                    {/* Shipping Date & Courier in one row */}
+                    <div className="flex gap-4">
+                      <div className="w-full">
+                        <Label>Shipping Date</Label>
+                        <Input type="date" value={formData.shippingDate || ""} onChange={(e) => setFormData({ ...formData, shippingDate: e.target.value })} />
+                      </div>
+
+                      <div className="w-full">
+                        <Label>Courier</Label>
+                        <Select value={formData.courier || ""} onValueChange={(value) => setFormData({ ...formData, courier: value })}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select Courier" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["JNE", "J&T", "SiCepat", "Pos Indonesia", "Wahana"].map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <div>
-                      <Label>Courier</Label>
-                      <Select value={formData.courier || ""} onValueChange={(value) => setFormData({ ...formData, courier: value })}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select Courier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["JNE", "J&T", "SiCepat", "Pos Indonesia", "Wahana"].map((c) => (
-                            <SelectItem key={c} value={c}>
-                              {c}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                    {/* Resi Upload */}
                     <div>
                       <Label>Resi Image</Label>
                       <Input
@@ -309,7 +314,11 @@ export default function OutboundPage() {
                           }
                         }}
                       />
-                      {formData.resiImg && <img src={formData.resiImg} alt="Resi Preview" className="mt-2 w-32 h-32 object-cover border" />}
+                      {formData.resiImg && (
+                        <div className="mt-2">
+                          <Image src={formData.resiImg} alt="Resi Preview" width={128} height={128} className="object-cover border rounded-md" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -331,7 +340,6 @@ export default function OutboundPage() {
                   <Label className="mt-2">Pickup Required?</Label>
                 </div>
 
-                {/* Pickup Fields */}
                 {formData.isPickup && (
                   <div className="flex flex-col gap-4 mt-1">
                     <div>
@@ -347,7 +355,6 @@ export default function OutboundPage() {
                 )}
               </div>
 
-              {/* Submit Button */}
               <div className="col-span-2 flex justify-end mt-4">
                 <Button type="submit" className="flex items-center gap-2">
                   <Save className="h-4 w-4" /> Save
@@ -371,19 +378,19 @@ export default function OutboundPage() {
         ))}
       </div>
 
-      {/* Table */}
       <Table className="mt-2">
         <TableHeader>
           <TableRow>
             <TableHead>Product</TableHead>
             <TableHead>Qty</TableHead>
-            <TableHead>Buyer</TableHead>
-            <TableHead>Selling Price</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Operational Cost</TableHead>
-            <TableHead>Total</TableHead>
+            {/* <TableHead>Total</TableHead> */}
             <TableHead>Shipping Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Courier</TableHead>
+            <TableHead>Resi</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -398,20 +405,39 @@ export default function OutboundPage() {
               <TableRow key={item.id}>
                 <TableCell>{item.product}</TableCell>
                 <TableCell>{item.qty}</TableCell>
-                <TableCell>{item.pickupBy}</TableCell>
-                <TableCell>Rp {item.sellingPrice.toLocaleString("id-ID")}</TableCell>
-                <TableCell>Rp {item.operationalCost.toLocaleString("id-ID")}</TableCell>
-                <TableCell>Rp {(item.sellingPrice + item.operationalCost).toLocaleString("id-ID")}</TableCell>
-                <TableCell>{item.shippingDate}</TableCell>
+                <TableCell>{item.reason}</TableCell>
+                <TableCell>{formatCurrency(item.operationalCost)}</TableCell>
+                {/* <TableCell>Rp {item.totalValue}</TableCell> */}
+                <TableCell>{item.shippingDate ? formatDate(item.shippingDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">Not shipping</span>}</TableCell>
                 <TableCell>{item.status}</TableCell>
                 <TableCell>{item.courier || "-"}</TableCell>
+                <TableCell>{item.resiUploadDate ? formatDate(item.resiUploadDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">No resi</span>}</TableCell>
+                <TableCell className="text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit3 className="h-4 w-4 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <CircleX className="h-4 w-4 mr-2" /> Cancel
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
 
-      {/* Pagination */}
       <div className="flex justify-between items-center mt-4">
         <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, outboundList.length)} of ${outboundList.length} entries`}</div>
         <div className="flex items-center gap-2">
