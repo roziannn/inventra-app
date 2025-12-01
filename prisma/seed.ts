@@ -58,6 +58,7 @@ async function main() {
 
   await prisma.supplier.createMany({
     data: suppliers.map((name) => ({
+      id: crypto.randomUUID(),
       name,
       createdBy: "administrator@inventra.co.id",
       createdAt: new Date(),

@@ -8,6 +8,7 @@ export async function GET() {
 
     const mapped = data.map((d) => ({
       id: d.id,
+      productId: d.product?.id,
       product: d.product.name,
       pickupBy: d.pickupBy,
       qty: d.qty,
@@ -42,6 +43,26 @@ export async function POST(req: NextRequest) {
     const created = await outboundService.create(body);
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unexpected server error";
+    return NextResponse.json({ success: false, message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const idParam = url.searchParams.get("id");
+    if (!idParam) return NextResponse.json({ success: false, message: "ID is required" }, { status: 400 });
+
+    const id = Number(idParam);
+    const body: CreateOutboundDto = await req.json();
+
+    body.status = body.isShipping ? "SHIPPED" : body.isPickup ? "PICKED_UP" : body.status ?? "PROCESSING";
+
+    const updated = await outboundService.update(id, body);
+
+    return NextResponse.json({ success: true, data: updated }, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected server error";
     return NextResponse.json({ success: false, message }, { status: 500 });

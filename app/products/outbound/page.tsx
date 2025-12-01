@@ -15,12 +15,27 @@ import { formatDate } from "@/helper/formatDate";
 import { inputCurrency } from "@/helper/inputCurrency";
 import { productService } from "@/services/product.service";
 import { outboundClient } from "@/services/client/outbound.client";
-import { CreateOutboundDto } from "@/types/outbound";
+import { CreateOutboundDto, OutboundCancleDto } from "@/types/outbound";
 import { formatCurrency } from "@/helper/formatCurrency";
 import Image from "next/image";
 
 export default function OutboundPage() {
   const queryClient = useQueryClient();
+
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const [cancelingItem, setCancelingItem] = useState<OutboundCancleDto | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
+
+  const cancelOutbound = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string; canceledNote: string }) => outboundClient.cancel(id, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outbounds"] });
+      setCancelingItem(null);
+      setCancelNote("");
+    },
+  });
 
   // product LOV
   const { data: products = [], isLoading: loadingProducts } = useQuery({
@@ -38,6 +53,7 @@ export default function OutboundPage() {
 
   // form state
   const [formData, setFormData] = useState<CreateOutboundDto>({
+    id: "",
     product: "",
     productId: "",
     qty: null,
@@ -75,9 +91,27 @@ export default function OutboundPage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (payload: CreateOutboundDto) => outboundClient.update(Number(editId!), payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outbounds"] });
+      resetForm();
+      setOpen(false);
+      setIsEdit(false);
+      setEditId(null);
+    },
+  });
+
+  console.log(
+    "LOV IDs:",
+    products.map((p) => p.id)
+  );
+  console.log("Edit ID:", formData.productId);
+
   // reset form
   const resetForm = () => {
     setFormData({
+      id: "",
       product: "",
       productId: "",
       qty: 0,
@@ -123,6 +157,29 @@ export default function OutboundPage() {
     createMutation.mutate(payload);
   };
 
+  const handleEdit = (item: CreateOutboundDto) => {
+    setIsEdit(true);
+    setEditId(item.id);
+    setFormData({
+      ...item,
+      productId: String(item.productId),
+      qty: item.qty,
+      operationalCost: item.operationalCost,
+      reason: item.reason,
+      note: item.note || "",
+      isShipping: item.isShipping,
+      shippingDate: item.shippingDate || undefined,
+      courier: item.courier || undefined,
+      isResi: item.isResi,
+      resiImg: item.resiImg || undefined,
+      resiUploadDate: item.resiUploadDate || undefined,
+      isPickup: item.isPickup,
+      pickupDate: item.pickupDate || undefined,
+      pickupBy: item.pickupBy || undefined,
+    });
+    setOpen(true);
+  };
+
   // cards
   const statusCounts = outboundList.reduce((acc, curr) => {
     const statusKey = curr.status as string;
@@ -138,7 +195,7 @@ export default function OutboundPage() {
     { title: "Sent", value: statusCounts["SENT"] || 0, icon: <Truck className="h-5 w-5" /> },
     { title: "Delivered", value: statusCounts["DELIVERED"] || 0, icon: <CheckCircle2 className="h-5 w-5" /> },
     { title: "Operational Cost", value: `Rp ${totalOperationalCost.toLocaleString("id-ID")}`, icon: <Wallet className="h-5 w-5" /> },
-    { title: "Total Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary h-5 w-5" /> },
+    { title: "Total Sales Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary h-5 w-5" /> },
   ];
 
   const selectedProduct = products.find((p) => p.id === formData.productId);
@@ -357,10 +414,80 @@ export default function OutboundPage() {
 
               <div className="col-span-2 flex justify-end mt-4">
                 <Button type="submit" className="flex items-center gap-2">
-                  <Save className="h-4 w-4" /> Save
+                  {isEdit ? (
+                    <>
+                      <Save className="h-4 w-4" /> Update
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" /> Save
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel Outbound Dialog */}
+        <Dialog
+          open={!!cancelingItem}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setCancelingItem(null);
+              setCancelNote("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Cancel Outbound Item</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-red-600 font-semibold mb-2">Canceling cannot be undone!</p>
+            {cancelingItem && (
+              <div className="space-y-6">
+                <div>
+                  <Label>Product</Label>
+                  <Input value={cancelingItem.product} disabled />
+                </div>
+                <div>
+                  <Label>Quantity</Label>
+                  <Input value={cancelingItem.qty} disabled />
+                </div>
+                <div>
+                  <Label>Cancel Note</Label>
+                  <Input value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} placeholder="Reason for cancel" />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setCancelingItem(null)}>
+                Close
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (!cancelNote.trim()) {
+                    alert("Cancel note is required");
+                    return;
+                  }
+                  if (cancelingItem) {
+                    cancelOutbound.mutate(
+                      { id: cancelingItem.id, canceledNote: cancelNote },
+                      {
+                        onSuccess: () => {
+                          setCancelingItem(null);
+                          setCancelNote("");
+                          queryClient.invalidateQueries({ queryKey: ["outbounds"] });
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
+                Confirm Cancel
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -389,7 +516,7 @@ export default function OutboundPage() {
             <TableHead>Shipping Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Courier</TableHead>
-            <TableHead>Resi</TableHead>
+            <TableHead>Resi Date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -423,10 +550,10 @@ export default function OutboundPage() {
                       <DropdownMenuItem>
                         <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(item)}>
                         <Edit3 className="h-4 w-4 mr-2" /> Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setCancelingItem(item)}>
                         <CircleX className="h-4 w-4 mr-2" /> Cancel
                       </DropdownMenuItem>
                     </DropdownMenuContent>

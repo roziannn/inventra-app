@@ -17,6 +17,7 @@ export interface PickupInfo {
 }
 
 export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
+  id: string;
   product: string;
   productId: string; // ganti dari product
   reason: OutboundReason;
@@ -28,8 +29,16 @@ export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
   createdBy?: string;
 }
 
+export type OutboundCancleDto = {
+  id: string;
+  product: string;
+  qty: number;
+  canceledDate?: string | null;
+  canceledBy?: string | null;
+};
+
 export interface Outbound extends CreateOutboundDto {
   // product: Product;
-  id: number;
+  id: string;
   createdAt: string;
 }

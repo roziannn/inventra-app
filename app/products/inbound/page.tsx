@@ -276,38 +276,42 @@ export default function InboundPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginatedData.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.product}</TableCell>
-              <TableCell>{item.qty}</TableCell>
-              <TableCell>{item.supplier}</TableCell>
-              <TableCell>Rp {Number(item.purchasePrice).toLocaleString("id-ID")}</TableCell>
-              <TableCell>{formatDate(item.date)}</TableCell>
-              <TableCell>{item.status}</TableCell>
-              <TableCell>{item.note}</TableCell>
-              <TableCell className="text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon-sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => fetchTrackingItem.mutate(item.id)}>
-                      <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => handleEdit(item)}>
-                      <Edit3 className="h-4 w-4 mr-2" /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setCancelingItem(item)}>
-                      <CircleX className="h-4 w-4 mr-2" /> Cancel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {paginatedData.map((item) => {
+            const isCanceled = item.status === "CANCELED";
+            return (
+              <TableRow key={item.id} className={isCanceled ? "bg-zinc-50 text-zinc-500" : ""}>
+                <TableCell>{item.product}</TableCell>
+                <TableCell>{item.qty}</TableCell>
+                <TableCell>{item.supplier}</TableCell>
+                <TableCell>Rp {Number(item.purchasePrice).toLocaleString("id-ID")}</TableCell>
+                <TableCell>{formatDate(item.date)}</TableCell>
+                <TableCell>{item.status}</TableCell>
+                <TableCell>{item.note}</TableCell>
+                <TableCell className="text-center">
+                  {!isCanceled && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => fetchTrackingItem.mutate(item.id)}>
+                          <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(item)}>
+                          <Edit3 className="h-4 w-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setCancelingItem(item)}>
+                          <CircleX className="h-4 w-4 mr-2" /> Cancel
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       <Dialog open={!!trackingItem} onOpenChange={() => setTrackingItem(null)}>

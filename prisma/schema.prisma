@@ -147,7 +147,7 @@ model inbound {
 }
 
 model outbound {
-  id              Int             @id @default(autoincrement())
+  id              String          @id
   productId       String
   qty             Int
   totalValue      Decimal         @db.Decimal(18, 2)
@@ -164,6 +164,8 @@ model outbound {
   resiImg         String?         @db.VarChar(255)
   resiUploadDate  DateTime?       @db.DateTime(0)
   isPickup        Boolean         @default(false)
+  canceledDate    DateTime?       @db.DateTime(0)
+  canceledBy      String?         @db.VarChar(255)
   pickupDate      DateTime?       @db.Date
   pickupBy        String?         @db.VarChar(255)
   updateBy        String?         @db.VarChar(255)
