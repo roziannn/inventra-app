@@ -32,7 +32,7 @@ export interface CreateOutboundDto extends ShippingInfo, PickupInfo {
 export type OutboundCancleDto = {
   id: string;
   product: string;
-  qty: number;
+  qty?: number | null;
   canceledDate?: string | null;
   canceledBy?: string | null;
 };

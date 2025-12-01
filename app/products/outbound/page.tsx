@@ -92,7 +92,7 @@ export default function OutboundPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: CreateOutboundDto) => outboundClient.update(Number(editId!), payload),
+    mutationFn: (payload: CreateOutboundDto) => outboundClient.update(editId!, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["outbounds"] });
       resetForm();
@@ -148,13 +148,17 @@ export default function OutboundPage() {
       qty: Number(formData.qty) || null,
       totalValue,
       operationalCost: Number(formData.operationalCost),
-      status: "SENT",
+      status: formData.status,
       reason: formData.reason,
       isResi: !!formData.resiImg,
-      resiUploadDate: formData.resiImg ? new Date() : undefined,
+      resiUploadDate: formData.resiImg ? new Date() : formData.resiUploadDate,
     };
 
-    createMutation.mutate(payload);
+    if (isEdit) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
   const handleEdit = (item: CreateOutboundDto) => {
@@ -452,7 +456,7 @@ export default function OutboundPage() {
                 </div>
                 <div>
                   <Label>Quantity</Label>
-                  <Input value={cancelingItem.qty} disabled />
+                  <Input value={String(cancelingItem.qty ?? "")} disabled />
                 </div>
                 <div>
                   <Label>Cancel Note</Label>
@@ -528,39 +532,45 @@ export default function OutboundPage() {
               </TableCell>
             </TableRow>
           ) : (
-            paginatedData.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.product}</TableCell>
-                <TableCell>{item.qty}</TableCell>
-                <TableCell>{item.reason}</TableCell>
-                <TableCell>{formatCurrency(item.operationalCost)}</TableCell>
-                {/* <TableCell>Rp {item.totalValue}</TableCell> */}
-                <TableCell>{item.shippingDate ? formatDate(item.shippingDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">Not shipping</span>}</TableCell>
-                <TableCell>{item.status}</TableCell>
-                <TableCell>{item.courier || "-"}</TableCell>
-                <TableCell>{item.resiUploadDate ? formatDate(item.resiUploadDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">No resi</span>}</TableCell>
-                <TableCell className="text-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEdit(item)}>
-                        <Edit3 className="h-4 w-4 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setCancelingItem(item)}>
-                        <CircleX className="h-4 w-4 mr-2" /> Cancel
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
+            paginatedData.map((item) => {
+              const isCanceled = item.status === "CANCELED";
+
+              return (
+                <TableRow key={item.id} className={isCanceled ? "bg-zinc-50 text-zinc-500" : ""}>
+                  <TableCell>{item.product}</TableCell>
+                  <TableCell>{item.qty}</TableCell>
+                  <TableCell>{item.reason}</TableCell>
+                  <TableCell>{formatCurrency(item.operationalCost)}</TableCell>
+                  <TableCell>{item.shippingDate ? formatDate(item.shippingDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">Not shipping</span>}</TableCell>
+                  <TableCell>{item.status}</TableCell>
+                  <TableCell>{item.courier || "-"}</TableCell>
+                  <TableCell>{item.resiUploadDate ? formatDate(item.resiUploadDate) : <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 border border-gray-300">No resi</span>}</TableCell>
+
+                  <TableCell className="text-center">
+                    {!isCanceled && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(item)}>
+                            <Edit3 className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setCancelingItem(item)}>
+                            <CircleX className="h-4 w-4 mr-2" /> Cancel
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

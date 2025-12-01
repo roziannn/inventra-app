@@ -24,8 +24,8 @@ export const outboundClient = {
     return result.data;
   },
 
-  update: async (id: number, data: CreateOutboundDto): Promise<Outbound> => {
-    const res = await fetch(`${BASE_URL}/${id}`, {
+  update: async (id: string, data: CreateOutboundDto): Promise<Outbound> => {
+    const res = await fetch(`${BASE_URL}?id=${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

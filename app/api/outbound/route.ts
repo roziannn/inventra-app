@@ -48,15 +48,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
-
-export async function PUT(req: NextRequest) {
+export async function PUT(req: Request) {
   try {
     const url = new URL(req.url);
-    const idParam = url.searchParams.get("id");
-    if (!idParam) return NextResponse.json({ success: false, message: "ID is required" }, { status: 400 });
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ success: false, message: "Missing outbound id" }, { status: 400 });
+    }
 
-    const id = Number(idParam);
     const body: CreateOutboundDto = await req.json();
+
+    if (!body.productId || body.qty == null) {
+      return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
+    }
 
     body.status = body.isShipping ? "SHIPPED" : body.isPickup ? "PICKED_UP" : body.status ?? "PROCESSING";
 
@@ -64,7 +68,8 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated }, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unexpected server error";
+    console.error(err);
+    const message = err instanceof Error ? err.message : "Server error";
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
