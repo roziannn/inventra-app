@@ -86,7 +86,6 @@ model storagelocation {
   name            String
   description     String?
   type            storagelocation_type?
-  zone            String?
   maxCapacity     Int?
   currentCapacity Int?
   capacityUnit    String?
@@ -95,7 +94,11 @@ model storagelocation {
   createdBy       String?
   updatedAt       DateTime?
   updatedBy       String?
+  zoneId          String?               @db.VarChar(100)
   product         product[]
+  zone            zone?                 @relation(fields: [zoneId], references: [id], map: "fk_storagelocation_zone")
+
+  @@index([zoneId], map: "fk_storagelocation_zone")
 }
 
 model supplier {
@@ -173,6 +176,17 @@ model outbound {
   product         product         @relation(fields: [productId], references: [id], map: "fk_product")
 
   @@index([productId], map: "fk_product")
+}
+
+model zone {
+  id              String            @id @db.VarChar(100)
+  name            String            @db.VarChar(255)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now()) @db.DateTime(0)
+  createdBy       String?           @db.VarChar(255)
+  updatedAt       DateTime?         @db.DateTime(0)
+  updatedBy       String?           @db.VarChar(255)
+  storagelocation storagelocation[]
 }
 
 enum storagelocation_type {

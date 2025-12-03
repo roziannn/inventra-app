@@ -13,7 +13,7 @@ const data = {
   user: {
     name: "shadcn",
     email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    // avatar: "/avatars/shadcn.jpg",
   },
   teams: [
     {
@@ -48,11 +48,11 @@ const data = {
       url: "/master",
       icon: Archive,
       items: [
-        { title: "Categories", url: "/master/categories" },
         { title: "Brands", url: "/master/brands" },
-        // { title: "Units", url: "/master/units" },
+        { title: "Categories", url: "/master/categories" },
         { title: "Suppliers", url: "/master/suppliers" },
         { title: "Storage Locations", url: "/master/storage-locations" },
+        { title: "Zone", url: "/master/zone" },
       ],
     },
 

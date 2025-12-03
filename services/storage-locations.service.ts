@@ -42,4 +42,11 @@ export const storageLocationService = {
     if (!res.ok) throw new Error("Failed to fetch storage locations");
     return res.json();
   },
+
+  // GET by ID
+  getByStorageId: async (id: string): Promise<StorageLocation> => {
+    const res = await fetch(`${BASE_URL}?id=${id}`);
+    if (!res.ok) throw new Error("Failed to fetch storage location by ID");
+    return res.json();
+  },
 };

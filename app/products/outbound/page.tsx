@@ -202,8 +202,11 @@ export default function OutboundPage() {
     { title: "Total Sales Value", value: `Rp ${totalValue.toLocaleString("id-ID")}`, icon: <CircleArrowDown className="text-primary h-5 w-5" /> },
   ];
 
+  // kalkulasi otomatis valuePrice nya qty * harga satuan
   const selectedProduct = products.find((p) => p.id === formData.productId);
   const valuePrice = (selectedProduct?.price || 0) * (formData.qty || 0);
+
+  const [trackingItem, setTrackingItem] = useState<CreateOutboundDto | null>(null);
 
   return (
     <div className="p-6 space-y-4">
@@ -555,7 +558,7 @@ export default function OutboundPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setTrackingItem(item)}>
                             <MapPinCheck className="h-4 w-4 mr-2" /> Tracking
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(item)}>
@@ -574,6 +577,53 @@ export default function OutboundPage() {
           )}
         </TableBody>
       </Table>
+
+      <Dialog
+        open={!!trackingItem}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setTrackingItem(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tracking Status</DialogTitle>
+          </DialogHeader>
+          {trackingItem && (
+            <div className="space-y-4 p-2">
+              <div className="flex items-center gap-4">
+                <Truck className={`h-6 w-6 ${trackingItem.isShipping ? "text-green-600" : "text-gray-400"}`} />
+                <div>
+                  <p className="font-semibold">Shipping</p>
+                  <p className="text-sm text-gray-500">{trackingItem.shippingDate ? formatDate(trackingItem.shippingDate) : "Not yet shipped"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Package className={`h-6 w-6 ${trackingItem.isPickup ? "text-green-600" : "text-gray-400"}`} />
+                <div>
+                  <p className="font-semibold">Pickup</p>
+                  <p className="text-sm text-gray-500">{trackingItem.pickupDate ? formatDate(trackingItem.pickupDate) : "Not picked up yet"}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <CheckCircle2 className={`h-6 w-6 ${trackingItem.status === "DELIVERED" ? "text-green-600" : "text-gray-400"}`} />
+                <div>
+                  <p className="font-semibold">Delivered</p>
+                  <p className="text-sm text-gray-500">{trackingItem.status === "DELIVERED" ? "Successfully Delivered" : "Not delivered yet"}</p>
+                </div>
+              </div>
+
+              {trackingItem.resiImg && (
+                <div className="mt-4">
+                  <p className="font-semibold">Resi Image</p>
+                  <Image src={trackingItem.resiImg} alt="Resi Image" width={200} height={200} className="rounded-md border" />
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-between items-center mt-4">
         <div className="text-sm text-gray-600">{`Showing ${startIndex + 1} to ${Math.min(startIndex + itemsPerPage, outboundList.length)} of ${outboundList.length} entries`}</div>

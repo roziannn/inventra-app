@@ -4,23 +4,37 @@ import prisma from "@/lib/prisma";
 // ========= GET =========
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const type = searchParams.get("type"); // 'lov' untuk list tanpa paging
+  const type = searchParams.get("type"); // 'lov'
+  const id = searchParams.get("id"); // get by id
 
   try {
     if (type === "lov") {
-      // GET LOV
       const storageLocations = await prisma.storagelocation.findMany({
-        select: {
-          id: true,
-          name: true,
-        },
+        select: { id: true, name: true },
         orderBy: { name: "asc" },
       });
-
       return NextResponse.json(storageLocations);
     }
+    if (id) {
+      const location = await prisma.storagelocation.findUnique({
+        where: { id },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              stock: true,
+              updatedAt: true,
+            },
+          },
+        },
+      });
 
-    // GET paging default
+      if (!location) return NextResponse.json({ error: "Storage location not found" }, { status: 404 });
+
+      return NextResponse.json(location);
+    }
+
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
@@ -36,12 +50,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       data,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
     console.error(err);

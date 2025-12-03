@@ -54,7 +54,7 @@ export default function ManageStoragePage() {
           <SelectContent>
             {storageLocations.map((loc) => (
               <SelectItem key={loc.id} value={loc.id}>
-                {loc.zone}
+                {loc.name}
               </SelectItem>
             ))}
           </SelectContent>

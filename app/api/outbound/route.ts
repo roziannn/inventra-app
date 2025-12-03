@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
+
 export async function PUT(req: Request) {
   try {
     const url = new URL(req.url);
