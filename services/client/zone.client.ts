@@ -17,6 +17,15 @@ export const zoneClient = {
     return res.json();
   },
 
+  getLOV: async (): Promise<{ id: string; name: string }[]> => {
+    const res = await fetch(`${BASE_URL}?type=lov`);
+    const result = await res.json();
+
+    if (!res.ok || !result.success) throw new Error(result.message || "Failed to fetch zone LOV");
+
+    return result.data;
+  },
+
   create: async (payload: CreateZoneDto): Promise<ZoneListDto> => {
     const res = await fetch(BASE_URL, {
       method: "POST",
@@ -28,14 +37,15 @@ export const zoneClient = {
     return result.data;
   },
 
-  update: async (id: string, payload: UpdateZoneDto): Promise<{ data: ZoneListDto }> => {
+  update: async (id: string, payload: UpdateZoneDto): Promise<ZoneListDto> => {
     const res = await fetch(`${BASE_URL}?id=${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error("Failed to update zone");
-    return res.json();
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.message || "Failed to update zone");
+    return result.data;
   },
 
   delete: async (id: string): Promise<{ data: { success: boolean } }> => {

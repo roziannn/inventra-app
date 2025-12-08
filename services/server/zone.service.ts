@@ -15,6 +15,19 @@ export const zoneService = {
     });
   },
 
+  getLOV: async () => {
+    return await prisma.zone.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: { name: "asc" },
+    });
+  },
+
   create: async (payload: CreateZoneDto) => {
     return await prisma.zone.create({
       data: {

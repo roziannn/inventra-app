@@ -3,9 +3,15 @@ export interface StorageLocation {
   id: string;
   code: string;
   name: string;
+
   description?: string;
-  type?: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
-  zone?: string;
+
+  type: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
+  // zoneId?: string;
+  zone?: {
+    id: string;
+    name: string;
+  };
 
   maxCapacity?: number;
   currentCapacity?: number;
@@ -55,7 +61,10 @@ export interface UpdateStorageLocationDto {
   name?: string;
   description?: string;
   type?: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
-  zone?: string;
+  zone?: {
+    id: string;
+    name: string;
+  };
   maxCapacity?: number;
   currentCapacity?: number;
   capacityUnit?: string;

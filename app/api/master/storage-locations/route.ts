@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); // 'lov'
   const id = searchParams.get("id"); // get by id
+  const zoneId = searchParams.get("zoneId"); // get by zone id
 
   try {
     if (type === "lov") {
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
       });
       return NextResponse.json(storageLocations);
     }
+
     if (id) {
       const location = await prisma.storagelocation.findUnique({
         where: { id },
@@ -35,6 +37,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(location);
     }
 
+    if (zoneId) {
+      const locations = await prisma.storagelocation.findMany({
+        where: { zoneId },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              stock: true,
+              updatedAt: true,
+            },
+          },
+          zone: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { name: "asc" },
+      });
+      return NextResponse.json(locations);
+    }
+
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
@@ -44,6 +67,11 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: {
+          zone: {
+            select: { id: true, name: true },
+          },
+        },
       }),
       prisma.storagelocation.count(),
     ]);
@@ -74,7 +102,7 @@ export async function POST(req: Request) {
         name: body.name,
         description: body.description ?? null,
         type: body.type ?? null,
-        zone: body.zone ?? null,
+        zoneId: body.zone ?? null,
         maxCapacity: body.maxCapacity ?? null,
         currentCapacity: body.currentCapacity ?? null,
         capacityUnit: body.capacityUnit ?? null,
@@ -126,7 +154,7 @@ export async function PATCH(req: Request) {
         name: body.name,
         description: body.description,
         type: body.type,
-        zone: body.zone,
+        zoneId: body.zone ?? null,
         maxCapacity: body.maxCapacity,
         currentCapacity: body.currentCapacity,
         capacityUnit: body.capacityUnit,

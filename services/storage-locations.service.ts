@@ -49,4 +49,11 @@ export const storageLocationService = {
     if (!res.ok) throw new Error("Failed to fetch storage location by ID");
     return res.json();
   },
+
+  // GET by ZoneID
+  getByZoneId: async (zoneId: string): Promise<StorageLocation[]> => {
+    const res = await fetch(`${BASE_URL}?zoneId=${zoneId}`);
+    if (!res.ok) throw new Error("Failed to fetch storage locations by zone ID");
+    return res.json();
+  },
 };

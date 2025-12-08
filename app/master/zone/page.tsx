@@ -1,67 +1,99 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { CircleFadingArrowUp, CirclePlus, SquarePen, Trash2 } from "lucide-react";
+import { CirclePlus, SquarePen, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
 import { ZoneListDto } from "@/types/zone";
 import { formatDate } from "@/helper/formatDate";
 import { zoneClient } from "@/services/client/zone.client";
-import { zoneService } from "@/services/server/zone.service";
 
 export default function ZonePage() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [zoneName, setZoneName] = useState("");
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editIsActive, setEditIsActive] = useState(true);
-  const [zones, setZones] = useState<ZoneListDto[]>([]);
-
   const queryClient = useQueryClient();
 
+  const [open, setOpen] = useState(false);
+
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    isActive: true,
+  });
+
   // get all
-  const { data: Zone = [], isLoading } = useQuery({
+  const { data: zones = [], isLoading } = useQuery({
     queryKey: ["zones"],
     queryFn: zoneClient.getAll,
   });
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(Zone.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
-  const paginatedData = Zone.slice(startIndex, startIndex + itemsPerPage);
-
-  // MUTATIONS
-
-  const createZone = useMutation({
-    mutationFn: () => zoneClient.create({ name: zoneName, isActive: editIsActive }),
+  // create
+  const createMutation = useMutation({
+    mutationFn: () =>
+      zoneClient.create({
+        name: formData.name,
+        isActive: true,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["zones"] });
       resetForm();
     },
   });
 
-  const handleOpenEdit = (zone: ZoneListDto) => {
-    setDialogMode("edit");
-    setEditId(zone.id);
-    setZoneName(zone.name);
-    setEditIsActive(zone.isActive);
-    setDialogOpen(true);
+  // update
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      zoneClient.update(editId!, {
+        id: editId!,
+        name: formData.name,
+        isActive: formData.isActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["zones"] });
+      resetForm();
+      setIsEdit(false);
+      setEditId(null);
+    },
+  });
+
+  const handleOpenEdit = (item: ZoneListDto) => {
+    setIsEdit(true);
+    setEditId(item.id);
+
+    setFormData({
+      name: item.name,
+      isActive: item.isActive,
+    });
+
+    setOpen(true);
   };
 
   const resetForm = () => {
-    setZoneName("");
-    setEditId(null);
-    setDialogOpen(false);
-    setEditIsActive(true);
+    setFormData({
+      name: "",
+      isActive: true,
+    });
+    setOpen(false);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.name.trim()) {
+      alert("Name is required");
+      return;
+    }
+
+    if (isEdit) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
   };
 
   if (isLoading) return <p className="p-6">Loading...</p>;
@@ -73,16 +105,13 @@ export default function ZonePage() {
           <h1 className="text-2xl font-bold">Zones</h1>
           <p className="text-sm text-muted-foreground">Manage your zones catalog here</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <CircleFadingArrowUp /> Import
-          </Button>
-          <Button onClick={() => setDialogOpen(true)}>
-            <CirclePlus /> Add Zone
-          </Button>
-        </div>
+
+        <Button onClick={() => setOpen(true)}>
+          <CirclePlus /> Add Zone
+        </Button>
       </div>
 
+      {/* TABLE */}
       <Table>
         <TableHeader>
           <TableRow>
@@ -93,12 +122,13 @@ export default function ZonePage() {
             <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
-          {Zone.map((zone) => (
-            <TableRow key={zone.id}>
-              <TableCell>{zone.name}</TableCell>
+          {zones.map((z) => (
+            <TableRow key={z.id}>
+              <TableCell>{z.name}</TableCell>
               <TableCell>
-                {zone.isActive ? (
+                {z.isActive ? (
                   <Badge>
                     <IconCircleCheckFilled /> Active
                   </Badge>
@@ -108,10 +138,10 @@ export default function ZonePage() {
                   </Badge>
                 )}
               </TableCell>
-              <TableCell>{zone.createdBy}</TableCell>
-              <TableCell>{formatDate(zone.createdAt)}</TableCell>
+              <TableCell>{z.createdBy}</TableCell>
+              <TableCell>{formatDate(z.createdAt)}</TableCell>
               <TableCell className="flex justify-center gap-2">
-                <Button size="icon-sm" variant="outline" onClick={() => handleOpenEdit(zone)}>
+                <Button size="icon-sm" variant="outline" onClick={() => handleOpenEdit(z)}>
                   <SquarePen />
                 </Button>
                 <Button size="icon-sm" variant="destructive">
@@ -123,22 +153,26 @@ export default function ZonePage() {
         </TableBody>
       </Table>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* DIALOG */}
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md w-full">
           <DialogHeader>
-            <DialogTitle>{dialogMode === "add" ? "Add Zone" : "Edit Zone"}</DialogTitle>
+            <DialogTitle>{isEdit ? "Edit Zone" : "Add Zone"}</DialogTitle>
           </DialogHeader>
+
           <div className="grid gap-4">
             <Label>Name</Label>
-            <Input value={zoneName} onChange={(e) => setZoneName(e.target.value)} />
-            {dialogMode === "edit" && (
-              <div className="flex items-center gap-2">
+            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+
+            {isEdit && (
+              <div className="flex items-center gap-3 mt-2">
                 <Label>Status</Label>
-                <Switch checked={editIsActive} onCheckedChange={setEditIsActive} />
+                <Switch checked={formData.isActive} onCheckedChange={(v) => setFormData({ ...formData, isActive: v })} />
               </div>
             )}
-            <Button className="mt-4" onClick={dialogMode === "add" ? () => createZone.mutate() : () => createZone.mutate()}>
-              {createZone.isPending ? "Saving..." : "Save"}
+
+            <Button className="mt-4" onClick={handleSubmit}>
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save"}
             </Button>
           </div>
         </DialogContent>

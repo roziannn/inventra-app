@@ -14,6 +14,8 @@ import { formatDate } from "@/helper/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { IconCircleCheckFilled, IconCircleXFilled } from "@tabler/icons-react";
+import { zoneClient } from "@/services/client/zone.client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function StorageLocationPage() {
   const [page, setPage] = useState(1);
@@ -43,6 +45,11 @@ export default function StorageLocationPage() {
 
   const locations = data?.data || [];
   const totalPages = data?.pagination?.totalPages || 1;
+
+  const { data: zonesLov = [] } = useQuery({
+    queryKey: ["zones-lov"],
+    queryFn: zoneClient.getLOV,
+  });
 
   const createLocation = useMutation({
     mutationFn: () => storageLocationService.create(form),
@@ -87,7 +94,6 @@ export default function StorageLocationPage() {
   };
 
   const typeOptions = ["rack", "shelf", "drawer", "box", "bin", "cabinet"];
-  const zoneOptions = ["Ruang Sparepart", "Ruang Arsip", "Ruang Studio"];
 
   const generateCode = () => {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -146,7 +152,8 @@ export default function StorageLocationPage() {
                 <TableCell>{loc.code}</TableCell>
                 <TableCell>{loc.name}</TableCell>
                 <TableCell>{loc.type}</TableCell>
-                <TableCell>{loc.zone || "-"}</TableCell>
+                <TableCell>{loc.zone?.name ?? "-"}</TableCell>
+
                 <TableCell>
                   {loc.isActive ? (
                     <Badge>
@@ -172,7 +179,7 @@ export default function StorageLocationPage() {
                       setForm({
                         code: loc.code,
                         name: loc.name,
-                        zone: loc.zone || "",
+                        zone: loc.zone?.id || "",
                         description: loc.description || "",
                         type: loc.type,
                         maxCapacity: loc.maxCapacity || 0,
@@ -220,23 +227,27 @@ export default function StorageLocationPage() {
             <DialogTitle>{dialogMode === "add" ? "Add Location" : "Edit Location"}</DialogTitle>
           </DialogHeader>
 
-          {/* Name */}
           <div className="flex flex-col gap-2">
             <Label>Name</Label>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
 
-          {/* Zone */}
           <div className="flex flex-col gap-2">
             <Label>Zone</Label>
-            <select className="border rounded p-2" value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })}>
-              <option value="">Select Zone</option>
-              {zoneOptions.map((z) => (
-                <option key={z} value={z}>
-                  {z}
-                </option>
-              ))}
-            </select>
+
+            <Select value={form.zone} onValueChange={(val) => setForm({ ...form, zone: val })}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select zone" />
+              </SelectTrigger>
+
+              <SelectContent className="w-full">
+                {zonesLov.map((z) => (
+                  <SelectItem key={z.id} value={z.id}>
+                    {z.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 2 Columns: Type & Max Capacity */}
