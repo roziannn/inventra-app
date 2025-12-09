@@ -1,70 +1,63 @@
-// master
+// ===== Master Storage Location =====
 export interface StorageLocation {
   id: string;
   code: string;
   name: string;
-
   description?: string;
-
   type: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
-  // zoneId?: string;
   zone?: {
     id: string;
     name: string;
   };
-
   maxCapacity?: number;
   currentCapacity?: number;
   capacityUnit?: string;
-
+  product?: StorageProduct[];
   isActive: boolean;
-
   createdAt: string;
   createdBy?: string;
   updatedAt?: string;
   updatedBy?: string;
 }
 
-//manage-storage api
+// ===== Storage Product =====
 export interface StorageProduct {
   id: string;
-  productName: string;
-  qty: number;
-  updatedAt: string;
+  name: string;
+  stock: number;
+  updatedAt: Date;
 }
 
-export interface StorageLocationDetailResponse extends StorageLocation {
+// ===== Detail Response untuk UI =====
+export interface StorageLocationDetailResponse extends Omit<StorageLocation, "product"> {
   product?: {
     id: string;
     name: string;
     stock: number;
-    updatedAt: Date;
+    updatedAt: Date; // sudah Date supaya aman di UI
   }[];
 }
 
-// create
+// ===== Create DTO =====
 export interface CreateStorageLocationDto {
   code: string;
   name: string;
   description?: string;
   type?: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
-  zone?: string;
+  zone?: string; // id zona
   maxCapacity?: number;
   capacityUnit?: string;
   isActive?: boolean;
   createdBy?: string;
 }
 
-// update
+// ===== Update DTO =====
 export interface UpdateStorageLocationDto {
   code?: string;
   name?: string;
   description?: string;
   type?: "rack" | "shelf" | "drawer" | "box" | "cabinet" | "bin";
-  zone?: {
-    id: string;
-    name: string;
-  };
+  zone?: string;
   maxCapacity?: number;
   currentCapacity?: number;
   capacityUnit?: string;

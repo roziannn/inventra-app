@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -115,33 +114,39 @@ export default function ManageStoragePage() {
 
       <Dialog open={openDetail} onOpenChange={setOpenDetail}>
         <DialogContent className="max-w-2xl w-full">
-          <DialogHeader>
-            <DialogTitle>
-              Storage Location: {selectedLocation?.code} - {selectedLocation?.name}
-            </DialogTitle>
-            <DialogDescription>This dialog shows details about products stored in this location.</DialogDescription>
-          </DialogHeader>
+          {isDetailLoading ? (
+            <div>Loading details...</div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  Storage Location: {selectedLocation?.code} - {selectedLocation?.name}
+                </DialogTitle>
+                <DialogDescription>This dialog shows details about products stored in this location.</DialogDescription>
+              </DialogHeader>
 
-          <h4 className="font-semibold mt-4 mb-2">Stored Products</h4>
+              <h4 className="font-semibold mt-4 mb-2">Stored Products</h4>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Last Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selectedLocation?.product?.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>{item.stock}</TableCell>
-                  <TableCell>{formatDate(item.updatedAt)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedLocation?.product?.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell>{item.stock}</TableCell>
+                      <TableCell>{formatDate(item.updatedAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
