@@ -92,13 +92,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const stockToAdd = body.stock ?? 0;
+
+    // Create product
     const newProduct = await prisma.product.create({
       data: {
         id: crypto.randomUUID(),
         code: generateProductCode(),
         name: body.name,
         price: body.price ?? 0,
-        stock: body.stock ?? 0,
+        stock: stockToAdd,
         unit: body.unit ?? "",
         isActive: body.isActive ?? true,
         storageLocationId: body.storageLocationId,
@@ -110,6 +113,18 @@ export async function POST(req: Request) {
         barcode: body.barcode ?? null,
       },
     });
+
+    // update storage currentCapacity
+    if (stockToAdd > 0) {
+      await prisma.storagelocation.update({
+        where: { id: body.storageLocationId },
+        data: {
+          currentCapacity: {
+            increment: stockToAdd,
+          },
+        },
+      });
+    }
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (err) {

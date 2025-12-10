@@ -14,7 +14,7 @@ export interface StorageLocation {
   capacityUnit?: string;
   product?: StorageProduct[];
   isActive: boolean;
-  createdAt: string;
+  createdAt?: string;
   createdBy?: string;
   updatedAt?: string;
   updatedBy?: string;
@@ -34,7 +34,8 @@ export interface StorageLocationDetailResponse extends Omit<StorageLocation, "pr
     id: string;
     name: string;
     stock: number;
-    updatedAt: Date; // sudah Date supaya aman di UI
+    updatedAt: Date;
+    createdAt?: Date | null;
   }[];
 }
 

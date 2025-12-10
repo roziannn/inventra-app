@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     if (type === "lov") {
       const storageLocations = await prisma.storagelocation.findMany({
-        select: { id: true, name: true },
+        select: { id: true, name: true, maxCapacity: true, currentCapacity: true },
         orderBy: { name: "asc" },
       });
       return NextResponse.json(storageLocations);
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
               name: true,
               stock: true,
               updatedAt: true,
+              createdAt: true,
             },
           },
         },
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest) {
               name: true,
               stock: true,
               updatedAt: true,
+              createdAt: true,
             },
           },
           zone: {

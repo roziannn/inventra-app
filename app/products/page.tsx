@@ -380,11 +380,20 @@ export default function ProductPage() {
                   <SelectValue placeholder="-- Select Storage --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {storageLocations?.map((sto) => (
-                    <SelectItem key={sto.id} value={sto.id}>
-                      {sto.name}
-                    </SelectItem>
-                  ))}
+                  {storageLocations?.map((sto) => {
+                    const percentUsed = sto.maxCapacity ? Math.round((sto.currentCapacity / sto.maxCapacity) * 100) : 0;
+                    return (
+                      <SelectItem key={sto.id} value={sto.id} className="flex justify-between items-center">
+                        <span>{sto.name}</span>
+                        <div className="flex gap-2 items-center">
+                          <Badge variant="secondary">
+                            {sto.currentCapacity}/{sto.maxCapacity}
+                          </Badge>
+                          <Badge variant={percentUsed > 80 ? "destructive" : "default"}>{percentUsed}%</Badge>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
